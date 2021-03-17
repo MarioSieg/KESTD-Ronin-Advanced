@@ -1,0 +1,19 @@
+[package]
+name = "dynasim"
+version = "0.1.0"
+authors = ["msi <support@kerbogames.com>"]
+edition = "2018"
+
+[lib]
+name = "libdynasim"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dynasm"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1.0.124", features = ["derive"] }
+serde_yaml = "0.8.17"
+smallvec = "1.6.1"
+glfw = "0.41.0"
