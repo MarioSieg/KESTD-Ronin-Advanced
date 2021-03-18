@@ -1,4 +1,5 @@
 pub use super::config::CoreConfig;
+use log::info;
 
 pub mod memory;
 pub mod platform;
@@ -20,10 +21,13 @@ pub struct SystemSupervisor {
 
 impl SystemSupervisor {
     pub fn initialize(cfg: &CoreConfig) -> Self {
-        Self {
-            platform: PlatformSystem::initialize(cfg),
-            memory: MemorySystem::initialize(cfg),
-        }
+        info!("Initializing platform system...");
+        let platform = PlatformSystem::initialize(cfg);
+
+        info!("Initializing memory system...");
+        let memory = MemorySystem::initialize(cfg);
+
+        Self { platform, memory }
     }
 
     pub fn tick_all(&mut self) -> bool {

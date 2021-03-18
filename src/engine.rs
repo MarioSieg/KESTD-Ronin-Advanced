@@ -1,5 +1,6 @@
 use super::config::CoreConfig;
 use super::systems::SystemSupervisor;
+use indicatif::HumanDuration;
 use log::*;
 use std::io::Write;
 use std::time::Instant;
@@ -17,8 +18,8 @@ impl Engine {
         let systems = SystemSupervisor::initialize(&config);
         let this = Self { config, systems };
         info!(
-            "System online! Boot time: {}s",
-            clock.elapsed().as_secs_f32()
+            "System online! Boot time: {}",
+            HumanDuration(clock.elapsed())
         );
         this
     }
@@ -34,8 +35,8 @@ impl Engine {
         }
 
         info!(
-            "Simulation stopped. Simulated for {}s with {} cycles!",
-            clock.elapsed().as_secs_f32(),
+            "Simulation stopped. Simulated for {} with {} cycles!",
+            HumanDuration(clock.elapsed()),
             cycles
         );
         cycles

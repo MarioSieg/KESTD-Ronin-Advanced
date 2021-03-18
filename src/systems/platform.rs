@@ -13,8 +13,6 @@ pub struct PlatformSystem {
 
 impl System for PlatformSystem {
     fn initialize(_cfg: &CoreConfig) -> Self {
-        info!("Initializing platform system...");
-
         // print system info:
         let mut sys_info = sysinfo::System::new_all();
         sys_info.refresh_all();

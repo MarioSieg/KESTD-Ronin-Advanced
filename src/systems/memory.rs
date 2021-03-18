@@ -1,5 +1,6 @@
 use super::{CoreConfig, System};
 use bumpalo::Bump as BumpAllocator;
+use indicatif::HumanBytes;
 use lifeguard::{pool, Pool, StartingSize};
 use log::info;
 
@@ -10,8 +11,6 @@ pub struct MemorySystem {
 
 impl System for MemorySystem {
     fn initialize(cfg: &CoreConfig) -> Self {
-        info!("Initializing memory system...");
-
         info!(
             "Creating string pool with {} preallocated entries...",
             cfg.mem_config.default_string_pool_size
@@ -21,8 +20,8 @@ impl System for MemorySystem {
             .build();
 
         info!(
-            "Creating bump allocator with {} MB capacity...",
-            cfg.mem_config.default_pool_allocator_size as f32 / 1024.0 / 1024.0
+            "Creating bump allocator with {} capacity...",
+            HumanBytes(cfg.mem_config.default_pool_allocator_size as _)
         );
         let bump_allocator =
             BumpAllocator::with_capacity(cfg.mem_config.default_pool_allocator_size);
