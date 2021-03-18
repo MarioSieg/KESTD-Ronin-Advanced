@@ -12,14 +12,14 @@ pub struct PlatformSystem {
     pub sys_info: sysinfo::System,
 }
 
-impl System<()> for PlatformSystem {
-    fn initialize(cfg: &mut CoreConfig, _: &()) -> Self {
-        // print system info:
+impl PlatformSystem {
+    fn get_and_print_system_info() -> sysinfo::System {
         let mut sys_info = sysinfo::System::new_all();
         sys_info.refresh_all();
 
         info!("CPU: {}", sys_info.get_global_processor_info().get_brand());
-        info!("Logical cores: {}", num_cpus::get());
+        info!("CPU cores (logical): {}", num_cpus::get());
+        info!("CPU cores (physical): {}", num_cpus::get_physical());
 
         for component in sys_info.get_components() {
             info!("{:?}", component);
@@ -95,6 +95,12 @@ impl System<()> for PlatformSystem {
             );
         }
 
+        sys_info
+    }
+
+    fn create_window(
+        cfg: &mut CoreConfig,
+    ) -> (glfw::Glfw, glfw::Window, Receiver<(f64, glfw::WindowEvent)>) {
         // create window:
         let mut glfw =
             glfw::init(glfw::FAIL_ON_ERRORS).expect("Failed to initialize glfw context!");
@@ -122,7 +128,7 @@ impl System<()> for PlatformSystem {
             )
         };
 
-        let (mut window, events) = if cfg.display_config.window_mode == WindowMode::Windowed {
+        let (window, events) = if cfg.display_config.window_mode == WindowMode::Windowed {
             make_windowed(
                 &mut glfw,
                 &mut cfg.display_config.resolution.0,
@@ -154,6 +160,14 @@ impl System<()> for PlatformSystem {
             })
         }
         .expect("Failed to create window!");
+        (glfw, window, events)
+    }
+}
+
+impl System<()> for PlatformSystem {
+    fn initialize(cfg: &mut CoreConfig, _: &()) -> Self {
+        let sys_info = Self::get_and_print_system_info();
+        let (glfw, mut window, events) = Self::create_window(cfg);
 
         window.focus();
         window.show();
