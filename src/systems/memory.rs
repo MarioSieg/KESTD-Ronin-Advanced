@@ -1,4 +1,5 @@
-use super::{CoreConfig, System};
+use super::System;
+use crate::config::CoreConfig;
 use bumpalo::Bump as BumpAllocator;
 use indicatif::HumanBytes;
 use lifeguard::{pool, Pool, StartingSize};
@@ -10,21 +11,21 @@ pub struct MemorySystem {
 }
 
 impl System for MemorySystem {
-    fn initialize(cfg: &CoreConfig) -> Self {
+    fn initialize(cfg: &mut CoreConfig) -> Self {
         info!(
             "Creating string pool with {} preallocated entries...",
-            cfg.mem_config.default_string_pool_size
+            cfg.memory_config.default_string_pool_size
         );
         let string_pool = pool()
-            .with(StartingSize(cfg.mem_config.default_string_pool_size))
+            .with(StartingSize(cfg.memory_config.default_string_pool_size))
             .build();
 
         info!(
             "Creating bump allocator with {} capacity...",
-            HumanBytes(cfg.mem_config.default_pool_allocator_size as _)
+            HumanBytes(cfg.memory_config.default_pool_allocator_size as _)
         );
         let bump_allocator =
-            BumpAllocator::with_capacity(cfg.mem_config.default_pool_allocator_size);
+            BumpAllocator::with_capacity(cfg.memory_config.default_pool_allocator_size);
 
         // todo: config
         Self {

@@ -1,4 +1,4 @@
-pub use super::config::CoreConfig;
+use super::config::CoreConfig;
 use log::info;
 
 pub mod memory;
@@ -8,7 +8,7 @@ use memory::MemorySystem;
 use platform::PlatformSystem;
 
 pub trait System {
-    fn initialize(cfg: &CoreConfig) -> Self;
+    fn initialize(cfg: &mut CoreConfig) -> Self;
     fn tick(&mut self) -> bool {
         true
     }
@@ -20,7 +20,7 @@ pub struct SystemSupervisor {
 }
 
 impl SystemSupervisor {
-    pub fn initialize(cfg: &CoreConfig) -> Self {
+    pub fn initialize(cfg: &mut CoreConfig) -> Self {
         info!("Initializing platform system...");
         let platform = PlatformSystem::initialize(cfg);
 

@@ -1,8 +1,10 @@
-use super::{CoreConfig, System};
+use super::System;
+use crate::config::{CoreConfig, WindowMode};
 use glfw::Context;
+use indicatif::HumanBytes;
 use log::*;
 use std::sync::mpsc::Receiver;
-use sysinfo::{NetworkExt, ProcessorExt, SystemExt, UserExt};
+use sysinfo::{DiskExt, NetworkExt, ProcessorExt, SystemExt, UserExt};
 
 pub struct PlatformSystem {
     pub glfw: glfw::Glfw,
@@ -12,7 +14,7 @@ pub struct PlatformSystem {
 }
 
 impl System for PlatformSystem {
-    fn initialize(_cfg: &CoreConfig) -> Self {
+    fn initialize(cfg: &mut CoreConfig) -> Self {
         // print system info:
         let mut sys_info = sysinfo::System::new_all();
         sys_info.refresh_all();
@@ -25,7 +27,14 @@ impl System for PlatformSystem {
         }
 
         for disk in sys_info.get_disks() {
-            info!("{:?}", disk);
+            info!(
+                "Disk: {:?}, Type: {:?}, FS: {}, {} / {}",
+                disk.get_name(),
+                disk.get_type(),
+                String::from_utf8_lossy(disk.get_file_system()),
+                HumanBytes(disk.get_total_space() - disk.get_available_space()),
+                HumanBytes(disk.get_total_space())
+            );
         }
 
         info!(
@@ -33,25 +42,42 @@ impl System for PlatformSystem {
             sys_info.get_total_memory() as f32 / 1024.0 / 1024.0
         );
         info!(
-            "Used memory : {} GB",
+            "Used memory: {} GB",
             sys_info.get_used_memory() as f32 / 1024.0 / 1024.0
         );
         info!(
-            "Total swap  : {} GB",
+            "Total swap: {} GB",
             sys_info.get_total_swap() as f32 / 1024.0 / 1024.0
         );
         info!(
-            "Used swap   : {} GB",
+            "Used swap: {} GB",
             sys_info.get_used_swap() as f32 / 1024.0 / 1024.0
         );
 
-        info!("System name:             {:?}", sys_info.get_name());
         info!(
-            "System kernel version:   {:?}",
-            sys_info.get_kernel_version()
+            "System name: {}",
+            sys_info
+                .get_name()
+                .unwrap_or_else(|| String::from("Unknown"))
         );
-        info!("System OS version:       {:?}", sys_info.get_os_version());
-        info!("System host name:        {:?}", sys_info.get_host_name());
+        info!(
+            "System kernel version: {}",
+            sys_info
+                .get_kernel_version()
+                .unwrap_or_else(|| String::from("Unknown"))
+        );
+        info!(
+            "System OS version: {}",
+            sys_info
+                .get_os_version()
+                .unwrap_or_else(|| String::from("Unknown"))
+        );
+        info!(
+            "Machine name: {}",
+            sys_info
+                .get_host_name()
+                .unwrap_or_else(|| String::from("Unknown"))
+        );
 
         for user in sys_info.get_users() {
             info!(
@@ -71,15 +97,63 @@ impl System for PlatformSystem {
         }
 
         // create window:
-        let glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
-        let (mut window, events) = glfw
-            .create_window(
-                800,
-                600,
-                "KESTD Ronin Advanced - Simulation",
+        let mut glfw =
+            glfw::init(glfw::FAIL_ON_ERRORS).expect("Failed to initialize glfw context!");
+
+        const WIN_TITLE: &str = "KESTD Ronin Advanced - Simulation";
+
+        fn make_windowed(
+            glfw: &glfw::Glfw,
+            width: &mut u16,
+            height: &mut u16,
+        ) -> Option<(glfw::Window, Receiver<(f64, glfw::WindowEvent)>)> {
+            if *width == 0 || *width > 16384 || *width < 800 {
+                *width = 1920;
+            }
+            if *height == 0 || *height > 16384 || *height < 600 {
+                *height = 1920;
+            }
+            glfw.create_window(
+                *width as _,
+                *height as _,
+                WIN_TITLE,
                 glfw::WindowMode::Windowed,
             )
-            .unwrap();
+        };
+
+        let (mut window, events) = if cfg.display_config.window_mode == WindowMode::Windowed {
+            make_windowed(
+                &glfw,
+                &mut cfg.display_config.resolution.0,
+                &mut cfg.display_config.resolution.1,
+            )
+        } else {
+            glfw.with_primary_monitor_mut(|ctx, monitor| {
+                // if we fail to get the primary monitor, try windowed mode:
+                if monitor.is_none() {
+                    make_windowed(
+                        &ctx,
+                        &mut cfg.display_config.resolution.0,
+                        &mut cfg.display_config.resolution.1,
+                    )
+                } else {
+                    let monitor = monitor.expect("Failed to retrieve primary monitor!");
+                    let video_mode = monitor
+                        .get_video_mode()
+                        .expect("Failed to retrieve primary video mode!");
+                    cfg.display_config.resolution.0 = video_mode.width as _;
+                    cfg.display_config.resolution.1 = video_mode.height as _;
+                    ctx.create_window(
+                        cfg.display_config.resolution.0 as _,
+                        cfg.display_config.resolution.1 as _,
+                        WIN_TITLE,
+                        glfw::WindowMode::FullScreen(monitor),
+                    )
+                }
+            })
+        }
+        .expect("Failed to create window!");
+
         window.make_current();
 
         PlatformSystem {

@@ -14,8 +14,8 @@ impl Engine {
     pub fn initialize() -> Self {
         let clock = Instant::now();
         info!("Initializing KESTD Ronin simulation system...");
-        let config = CoreConfig::load();
-        let systems = SystemSupervisor::initialize(&config);
+        let mut config = CoreConfig::load();
+        let systems = SystemSupervisor::initialize(&mut config);
         let this = Self { config, systems };
         info!(
             "System online! Boot time: {}",
