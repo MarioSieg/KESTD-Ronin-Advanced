@@ -19,7 +19,7 @@ smallvec = "1.6.1"
 glfw = "0.41.0"
 sysinfo = "0.16.4"
 log = "0.4.14"
-simple_logger = "1.11.0"
+fern = { version = "0.6.0", features = ["colored"] }
 num_cpus = "1.13.0"
 lifeguard = "0.6.1"
 bumpalo = "3.6.1"
@@ -28,3 +28,4 @@ indicatif = {version = "0.15.0", features = ["rayon"] }
 futures = "0.3.13"
 wgpu = "0.7.0"
 cgmath = "0.18.0"
+chrono = "0.4.19"

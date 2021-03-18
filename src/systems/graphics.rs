@@ -1,5 +1,6 @@
 use super::System;
 use crate::config::CoreConfig;
+use log::info;
 
 pub struct GraphicsSystem {
     pub instance: wgpu::Instance,
@@ -50,6 +51,11 @@ impl System<glfw::Window> for GraphicsSystem {
             &surface,
             cfg.application_config.power_safe_mode,
         ));
+
+        let info = adapter.get_info();
+        info!("GPU: {}", info.name);
+        info!("API: {:?}", info.backend);
+        info!("Type: {:?}", info.device_type);
 
         Self {
             instance,

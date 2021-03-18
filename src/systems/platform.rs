@@ -21,6 +21,144 @@ impl PlatformSystem {
         info!("CPU cores (logical): {}", num_cpus::get());
         info!("CPU cores (physical): {}", num_cpus::get_physical());
 
+        #[cfg(target_arch = "x86_64")]
+        {
+            info!("{}: {}", "aes", std::is_x86_feature_detected!("aes"));
+            info!(
+                "{}: {}",
+                "pclmulqdq",
+                std::is_x86_feature_detected!("pclmulqdq")
+            );
+            info!("{}: {}", "rdrand", std::is_x86_feature_detected!("rdrand"));
+            info!("{}: {}", "rdseed", std::is_x86_feature_detected!("rdseed"));
+            info!("{}: {}", "tsc", std::is_x86_feature_detected!("tsc"));
+            info!("{}: {}", "mmx", std::is_x86_feature_detected!("mmx"));
+            info!("{}: {}", "sse", std::is_x86_feature_detected!("sse"));
+            info!("{}: {}", "sse2", std::is_x86_feature_detected!("sse2"));
+            info!("{}: {}", "sse3", std::is_x86_feature_detected!("sse3"));
+            info!("{}: {}", "ssse3", std::is_x86_feature_detected!("ssse3"));
+            info!("{}: {}", "sse4.1", std::is_x86_feature_detected!("sse4.1"));
+            info!("{}: {}", "sse4.2", std::is_x86_feature_detected!("sse4.2"));
+            info!("{}: {}", "sse4a", std::is_x86_feature_detected!("sse4a"));
+            info!("{}: {}", "sha", std::is_x86_feature_detected!("sha"));
+            info!("{}: {}", "avx", std::is_x86_feature_detected!("avx"));
+            info!("{}: {}", "avx2", std::is_x86_feature_detected!("avx2"));
+            info!(
+                "{}: {}",
+                "avx512f",
+                std::is_x86_feature_detected!("avx512f")
+            );
+            info!(
+                "{}: {}",
+                "avx512cd",
+                std::is_x86_feature_detected!("avx512cd")
+            );
+            info!(
+                "{}: {}",
+                "avx512er",
+                std::is_x86_feature_detected!("avx512er")
+            );
+            info!(
+                "{}: {}",
+                "avx512pf",
+                std::is_x86_feature_detected!("avx512pf")
+            );
+            info!(
+                "{}: {}",
+                "avx512bw",
+                std::is_x86_feature_detected!("avx512bw")
+            );
+            info!(
+                "{}: {}",
+                "avx512dq",
+                std::is_x86_feature_detected!("avx512dq")
+            );
+            info!(
+                "{}: {}",
+                "avx512vl",
+                std::is_x86_feature_detected!("avx512vl")
+            );
+            info!(
+                "{}: {}",
+                "avx512ifma",
+                std::is_x86_feature_detected!("avx512ifma")
+            );
+            info!(
+                "{}: {}",
+                "avx512vbmi",
+                std::is_x86_feature_detected!("avx512vbmi")
+            );
+            info!(
+                "{}: {}",
+                "avx512vpopcntdq",
+                std::is_x86_feature_detected!("avx512vpopcntdq")
+            );
+            info!(
+                "{}: {}",
+                "avx512vbmi2",
+                std::is_x86_feature_detected!("avx512vbmi2")
+            );
+            info!(
+                "{}: {}",
+                "avx512gfni",
+                std::is_x86_feature_detected!("avx512gfni")
+            );
+            info!(
+                "{}: {}",
+                "avx512vaes",
+                std::is_x86_feature_detected!("avx512vaes")
+            );
+            info!(
+                "{}: {}",
+                "avx512vpclmulqdq",
+                std::is_x86_feature_detected!("avx512vpclmulqdq")
+            );
+            info!(
+                "{}: {}",
+                "avx512vnni",
+                std::is_x86_feature_detected!("avx512vnni")
+            );
+            info!(
+                "{}: {}",
+                "avx512bitalg",
+                std::is_x86_feature_detected!("avx512bitalg")
+            );
+            info!(
+                "{}: {}",
+                "avx512bf16",
+                std::is_x86_feature_detected!("avx512bf16")
+            );
+            info!(
+                "{}: {}",
+                "avx512vp2intersect",
+                std::is_x86_feature_detected!("avx512vp2intersect")
+            );
+            info!("{}: {}", "f16c", std::is_x86_feature_detected!("f16c"));
+            info!("{}: {}", "fma", std::is_x86_feature_detected!("fma"));
+            info!("{}: {}", "bmi1", std::is_x86_feature_detected!("bmi1"));
+            info!("{}: {}", "bmi2", std::is_x86_feature_detected!("bmi2"));
+            info!("{}: {}", "abm", std::is_x86_feature_detected!("abm"));
+            info!("{}: {}", "lzcnt", std::is_x86_feature_detected!("lzcnt"));
+            info!("{}: {}", "tbm", std::is_x86_feature_detected!("tbm"));
+            info!("{}: {}", "popcnt", std::is_x86_feature_detected!("popcnt"));
+            info!("{}: {}", "fxsr", std::is_x86_feature_detected!("fxsr"));
+            info!("{}: {}", "xsave", std::is_x86_feature_detected!("xsave"));
+            info!(
+                "{}: {}",
+                "xsaveopt",
+                std::is_x86_feature_detected!("xsaveopt")
+            );
+            info!("{}: {}", "xsaves", std::is_x86_feature_detected!("xsaves"));
+            info!("{}: {}", "xsavec", std::is_x86_feature_detected!("xsavec"));
+            info!(
+                "{}: {}",
+                "cmpxchg16b",
+                std::is_x86_feature_detected!("cmpxchg16b")
+            );
+            info!("{}: {}", "adx", std::is_x86_feature_detected!("adx"));
+            info!("{}: {}", "rtm", std::is_x86_feature_detected!("rtm"));
+        }
+
         for component in sys_info.get_components() {
             info!("{:?}", component);
         }
@@ -38,20 +176,11 @@ impl PlatformSystem {
 
         info!(
             "Total memory: {} GB",
-            sys_info.get_total_memory() as f32 / 1024.0 / 1024.0
+            HumanBytes(sys_info.get_total_memory())
         );
-        info!(
-            "Used memory: {} GB",
-            sys_info.get_used_memory() as f32 / 1024.0 / 1024.0
-        );
-        info!(
-            "Total swap: {} GB",
-            sys_info.get_total_swap() as f32 / 1024.0 / 1024.0
-        );
-        info!(
-            "Used swap: {} GB",
-            sys_info.get_used_swap() as f32 / 1024.0 / 1024.0
-        );
+        info!("Used memory: {} GB", HumanBytes(sys_info.get_used_memory()));
+        info!("Total swap: {} GB", HumanBytes(sys_info.get_total_swap()));
+        info!("Used swap: {} GB", HumanBytes(sys_info.get_used_swap()));
 
         info!(
             "System name: {}",
@@ -116,7 +245,7 @@ impl PlatformSystem {
                 *width = 1920;
             }
             if *height == 0 || *height > 16384 || *height < 600 {
-                *height = 1920;
+                *height = 1080;
             }
             glfw.window_hint(glfw::WindowHint::ClientApi(glfw::ClientApiHint::NoApi));
             glfw.window_hint(glfw::WindowHint::Resizable(false));
