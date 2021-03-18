@@ -3,6 +3,7 @@ use super::systems::SystemSupervisor;
 use indicatif::HumanDuration;
 use log::*;
 use std::io::Write;
+use std::process;
 use std::time::Instant;
 
 pub struct Engine {
@@ -11,9 +12,10 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn initialize() -> Self {
+    pub fn initialize() -> Box<Self> {
         let clock = Instant::now();
         info!("Initializing KESTD Ronin simulation system...");
+        info!("PID: {}", process::id());
         let mut config = CoreConfig::load();
         let systems = SystemSupervisor::initialize(&mut config);
         let this = Self { config, systems };
@@ -21,7 +23,7 @@ impl Engine {
             "System online! Boot time: {}",
             HumanDuration(clock.elapsed())
         );
-        this
+        Box::new(this)
     }
 
     pub fn run(&mut self) -> u32 {
@@ -46,11 +48,5 @@ impl Engine {
 
     fn tick(&mut self) -> bool {
         self.systems.tick_all()
-    }
-}
-
-impl std::default::Default for Engine {
-    fn default() -> Self {
-        Self::initialize()
     }
 }

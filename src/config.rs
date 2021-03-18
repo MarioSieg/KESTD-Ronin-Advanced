@@ -33,7 +33,7 @@ impl Default for AppConfig {
 #[derive(Serialize, Deserialize)]
 pub struct MemoryConfig {
     pub default_string_pool_size: usize,
-    pub default_pool_allocator_size: usize,
+    pub default_memory_pool_size: usize,
 }
 
 impl MemoryConfig {
@@ -44,7 +44,7 @@ impl Default for MemoryConfig {
     fn default() -> Self {
         Self {
             default_string_pool_size: 16384,
-            default_pool_allocator_size: 1024 * 1024 * 512, // 512 MB
+            default_memory_pool_size: 1024 * 1024 * 512, // 512 MB
         }
     }
 }

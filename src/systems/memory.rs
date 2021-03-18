@@ -10,8 +10,8 @@ pub struct MemorySystem {
     pub bump_allocator: BumpAllocator,
 }
 
-impl System for MemorySystem {
-    fn initialize(cfg: &mut CoreConfig) -> Self {
+impl System<()> for MemorySystem {
+    fn initialize(cfg: &mut CoreConfig, _: &()) -> Self {
         info!(
             "Creating string pool with {} pre allocated entries...",
             cfg.memory_config.default_string_pool_size
@@ -22,10 +22,10 @@ impl System for MemorySystem {
 
         info!(
             "Creating bump allocator with {} capacity...",
-            HumanBytes(cfg.memory_config.default_pool_allocator_size as _)
+            HumanBytes(cfg.memory_config.default_memory_pool_size as _)
         );
         let bump_allocator =
-            BumpAllocator::with_capacity(cfg.memory_config.default_pool_allocator_size);
+            BumpAllocator::with_capacity(cfg.memory_config.default_memory_pool_size);
 
         // todo: config
         Self {
