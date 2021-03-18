@@ -13,7 +13,7 @@ pub struct MemorySystem {
 impl System for MemorySystem {
     fn initialize(cfg: &mut CoreConfig) -> Self {
         info!(
-            "Creating string pool with {} preallocated entries...",
+            "Creating string pool with {} pre allocated entries...",
             cfg.memory_config.default_string_pool_size
         );
         let string_pool = pool()

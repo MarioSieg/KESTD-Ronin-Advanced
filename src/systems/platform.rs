@@ -1,6 +1,5 @@
 use super::System;
 use crate::config::{CoreConfig, WindowMode};
-use glfw::Context;
 use indicatif::HumanBytes;
 use log::*;
 use std::sync::mpsc::Receiver;
@@ -103,7 +102,7 @@ impl System for PlatformSystem {
         const WIN_TITLE: &str = "KESTD Ronin Advanced - Simulation";
 
         fn make_windowed(
-            glfw: &glfw::Glfw,
+            glfw: &mut glfw::Glfw,
             width: &mut u16,
             height: &mut u16,
         ) -> Option<(glfw::Window, Receiver<(f64, glfw::WindowEvent)>)> {
@@ -113,6 +112,8 @@ impl System for PlatformSystem {
             if *height == 0 || *height > 16384 || *height < 600 {
                 *height = 1920;
             }
+            glfw.window_hint(glfw::WindowHint::ClientApi(glfw::ClientApiHint::NoApi));
+            glfw.window_hint(glfw::WindowHint::Resizable(false));
             glfw.create_window(
                 *width as _,
                 *height as _,
@@ -123,16 +124,16 @@ impl System for PlatformSystem {
 
         let (mut window, events) = if cfg.display_config.window_mode == WindowMode::Windowed {
             make_windowed(
-                &glfw,
+                &mut glfw,
                 &mut cfg.display_config.resolution.0,
                 &mut cfg.display_config.resolution.1,
             )
         } else {
-            glfw.with_primary_monitor_mut(|ctx, monitor| {
+            glfw.with_primary_monitor_mut(|mut ctx, monitor| {
                 // if we fail to get the primary monitor, try windowed mode:
                 if monitor.is_none() {
                     make_windowed(
-                        &ctx,
+                        &mut ctx,
                         &mut cfg.display_config.resolution.0,
                         &mut cfg.display_config.resolution.1,
                     )
@@ -154,7 +155,8 @@ impl System for PlatformSystem {
         }
         .expect("Failed to create window!");
 
-        window.make_current();
+        window.focus();
+        window.show();
 
         PlatformSystem {
             glfw,
@@ -165,7 +167,6 @@ impl System for PlatformSystem {
     }
 
     fn tick(&mut self) -> bool {
-        self.window.swap_buffers();
         self.glfw.poll_events();
         for (_, _) in glfw::flush_messages(&self.events) {}
         self.window.should_close()
