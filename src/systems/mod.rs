@@ -1,22 +1,32 @@
-pub mod window;
+pub use super::config::CoreConfig;
+
+pub mod memory;
+pub mod platform;
+
+use memory::MemorySystem;
+use platform::PlatformSystem;
 
 pub trait System {
-    fn initialize() -> Self;
-    fn tick(&mut self) -> bool;
+    fn initialize(cfg: &CoreConfig) -> Self;
+    fn tick(&mut self) -> bool {
+        true
+    }
 }
 
 pub struct SystemSupervisor {
-    pub window: window::WindowSystem,
+    pub platform: PlatformSystem,
+    pub memory: MemorySystem,
 }
 
 impl SystemSupervisor {
-    pub fn initialize() -> Self {
+    pub fn initialize(cfg: &CoreConfig) -> Self {
         Self {
-            window: window::WindowSystem::initialize(),
+            platform: PlatformSystem::initialize(cfg),
+            memory: MemorySystem::initialize(cfg),
         }
     }
 
     pub fn tick_all(&mut self) -> bool {
-        self.window.tick()
+        self.platform.tick() && self.memory.tick()
     }
 }

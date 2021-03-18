@@ -1,5 +1,6 @@
 use super::config::CoreConfig;
 use super::systems::SystemSupervisor;
+use log::*;
 use std::io::Write;
 use std::time::Instant;
 
@@ -10,13 +11,12 @@ pub struct Engine {
 
 impl Engine {
     pub fn initialize() -> Self {
-        println!("Initializing KESTD Ronin simulation system...");
         let clock = Instant::now();
-        let this = Self {
-            config: CoreConfig::load(),
-            systems: SystemSupervisor::initialize(),
-        };
-        println!(
+        info!("Initializing KESTD Ronin simulation system...");
+        let config = CoreConfig::load();
+        let systems = SystemSupervisor::initialize(&config);
+        let this = Self { config, systems };
+        info!(
             "System online! Boot time: {}s",
             clock.elapsed().as_secs_f32()
         );
@@ -24,7 +24,7 @@ impl Engine {
     }
 
     pub fn run(&mut self) -> u32 {
-        println!("Executing simulation...");
+        info!("Executing simulation...");
         let _ = std::io::stdout().flush();
         let clock = Instant::now();
 
@@ -33,7 +33,7 @@ impl Engine {
             cycles += 1;
         }
 
-        println!(
+        info!(
             "Simulation stopped. Simulated for {}s with {} cycles!",
             clock.elapsed().as_secs_f32(),
             cycles

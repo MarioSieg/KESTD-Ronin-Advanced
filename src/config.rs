@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
+use std::default::Default;
 use std::fs;
 use std::path::Path;
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct AppConfig {
     pub product_name: String,
     pub product_company: String,
@@ -12,9 +13,38 @@ pub struct AppConfig {
     pub power_safe_mode: bool,
 }
 
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            product_name: String::from("Untitled Product"),
+            product_company: String::from("Default Company"),
+            product_copyright: String::from("Default Copyright"),
+            product_description: String::from("Default Description"),
+            safe_mode: false,
+            power_safe_mode: false,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MemoryConfig {
+    pub default_string_pool_size: usize,
+    pub default_pool_allocator_size: usize,
+}
+
+impl Default for MemoryConfig {
+    fn default() -> Self {
+        Self {
+            default_string_pool_size: 16384,
+            default_pool_allocator_size: 1024 * 1024 * 512, // 512 MB
+        }
+    }
+}
+
 #[derive(Default, Serialize, Deserialize)]
 pub struct CoreConfig {
     pub app_config: AppConfig,
+    pub mem_config: MemoryConfig,
 }
 
 impl CoreConfig {
