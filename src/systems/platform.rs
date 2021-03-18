@@ -234,6 +234,35 @@ impl PlatformSystem {
         let mut glfw =
             glfw::init(glfw::FAIL_ON_ERRORS).expect("Failed to initialize glfw context!");
 
+        glfw.with_connected_monitors(|_, monitors| {
+            for (i, monitor) in monitors.iter().enumerate() {
+                info!("Monitor: {}", i + 1);
+                info!(
+                    "Name: {}",
+                    monitor
+                        .get_name()
+                        .unwrap_or_else(|| String::from("Unknown"))
+                );
+                info!("Position: {:?}", monitor.get_pos());
+                info!("Phyical size: {:?}", monitor.get_physical_size());
+                info!("Content scale: {:?}", monitor.get_content_scale());
+                info!("Workarea: {:?}", monitor.get_workarea());
+
+                let vids = monitor.get_video_modes();
+                info!("Video modes: {}", vids.len());
+
+                for (j, vid) in vids.iter().enumerate() {
+                    info!("Video mode: {}", j + 1);
+                    info!("Width: {}", vid.width);
+                    info!("Height: {}", vid.height);
+                    info!("Refresh rate: {}Hz", vid.refresh_rate);
+                    info!("R-Bits: {:b}", vid.red_bits);
+                    info!("G-Bits: {:b}", vid.green_bits);
+                    info!("B-Bits: {:b}", vid.blue_bits);
+                }
+            }
+        });
+
         const WIN_TITLE: &str = "KESTD Ronin Advanced - Simulation";
 
         fn make_windowed(
