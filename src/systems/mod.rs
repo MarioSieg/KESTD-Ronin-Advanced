@@ -11,6 +11,7 @@ use platform::PlatformSystem;
 
 pub trait System<T> {
     fn initialize(cfg: &mut CoreConfig, data: &T) -> Self;
+    fn prepare(&mut self) {}
     fn tick(&mut self) -> bool {
         true
     }
@@ -38,6 +39,12 @@ impl SystemSupervisor {
             memory,
             graphics,
         }
+    }
+
+    pub fn prepare_all(&mut self) {
+        self.platform.prepare();
+        self.memory.prepare();
+        self.graphics.prepare();
     }
 
     pub fn tick_all(&mut self) -> bool {

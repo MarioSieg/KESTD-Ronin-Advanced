@@ -74,6 +74,8 @@ impl Engine {
     }
 
     pub fn run(&mut self) -> u32 {
+        info!("Preparing systems...");
+        self.systems.prepare_all();
         info!("Executing simulation...");
         let _ = std::io::stdout().flush();
         let clock = Instant::now();

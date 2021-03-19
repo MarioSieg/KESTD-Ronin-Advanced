@@ -2,6 +2,7 @@ use super::System;
 use crate::config::{CoreConfig, WindowMode};
 use indicatif::HumanBytes;
 use log::*;
+use rayon::iter::*;
 use std::sync::mpsc::Receiver;
 use sysinfo::{DiskExt, NetworkExt, ProcessorExt, SystemExt, UserExt};
 
@@ -23,140 +24,248 @@ impl PlatformSystem {
 
         #[cfg(target_arch = "x86_64")]
         {
-            info!("{}: {}", "aes", std::is_x86_feature_detected!("aes"));
             info!(
                 "{}: {}",
-                "pclmulqdq",
+                "aes".to_uppercase(),
+                std::is_x86_feature_detected!("aes")
+            );
+            info!(
+                "{}: {}",
+                "pclmulqdq".to_uppercase(),
                 std::is_x86_feature_detected!("pclmulqdq")
             );
-            info!("{}: {}", "rdrand", std::is_x86_feature_detected!("rdrand"));
-            info!("{}: {}", "rdseed", std::is_x86_feature_detected!("rdseed"));
-            info!("{}: {}", "tsc", std::is_x86_feature_detected!("tsc"));
-            info!("{}: {}", "mmx", std::is_x86_feature_detected!("mmx"));
-            info!("{}: {}", "sse", std::is_x86_feature_detected!("sse"));
-            info!("{}: {}", "sse2", std::is_x86_feature_detected!("sse2"));
-            info!("{}: {}", "sse3", std::is_x86_feature_detected!("sse3"));
-            info!("{}: {}", "ssse3", std::is_x86_feature_detected!("ssse3"));
-            info!("{}: {}", "sse4.1", std::is_x86_feature_detected!("sse4.1"));
-            info!("{}: {}", "sse4.2", std::is_x86_feature_detected!("sse4.2"));
-            info!("{}: {}", "sse4a", std::is_x86_feature_detected!("sse4a"));
-            info!("{}: {}", "sha", std::is_x86_feature_detected!("sha"));
-            info!("{}: {}", "avx", std::is_x86_feature_detected!("avx"));
-            info!("{}: {}", "avx2", std::is_x86_feature_detected!("avx2"));
             info!(
                 "{}: {}",
-                "avx512f",
+                "rdrand".to_uppercase(),
+                std::is_x86_feature_detected!("rdrand")
+            );
+            info!(
+                "{}: {}",
+                "rdseed".to_uppercase(),
+                std::is_x86_feature_detected!("rdseed")
+            );
+            info!(
+                "{}: {}",
+                "tsc".to_uppercase(),
+                std::is_x86_feature_detected!("tsc")
+            );
+            info!(
+                "{}: {}",
+                "mmx".to_uppercase(),
+                std::is_x86_feature_detected!("mmx")
+            );
+            info!(
+                "{}: {}",
+                "sse".to_uppercase(),
+                std::is_x86_feature_detected!("sse")
+            );
+            info!(
+                "{}: {}",
+                "sse2".to_uppercase(),
+                std::is_x86_feature_detected!("sse2")
+            );
+            info!(
+                "{}: {}",
+                "sse3".to_uppercase(),
+                std::is_x86_feature_detected!("sse3")
+            );
+            info!(
+                "{}: {}",
+                "ssse3".to_uppercase(),
+                std::is_x86_feature_detected!("ssse3")
+            );
+            info!(
+                "{}: {}",
+                "sse4.1".to_uppercase(),
+                std::is_x86_feature_detected!("sse4.1")
+            );
+            info!(
+                "{}: {}",
+                "sse4.2".to_uppercase(),
+                std::is_x86_feature_detected!("sse4.2")
+            );
+            info!(
+                "{}: {}",
+                "sse4a".to_uppercase(),
+                std::is_x86_feature_detected!("sse4a")
+            );
+            info!(
+                "{}: {}",
+                "sha".to_uppercase(),
+                std::is_x86_feature_detected!("sha")
+            );
+            info!(
+                "{}: {}",
+                "avx".to_uppercase(),
+                std::is_x86_feature_detected!("avx")
+            );
+            info!(
+                "{}: {}",
+                "avx2".to_uppercase(),
+                std::is_x86_feature_detected!("avx2")
+            );
+            info!(
+                "{}: {}",
+                "avx512f".to_uppercase(),
                 std::is_x86_feature_detected!("avx512f")
             );
             info!(
                 "{}: {}",
-                "avx512cd",
+                "avx512cd".to_uppercase(),
                 std::is_x86_feature_detected!("avx512cd")
             );
             info!(
                 "{}: {}",
-                "avx512er",
+                "avx512er".to_uppercase(),
                 std::is_x86_feature_detected!("avx512er")
             );
             info!(
                 "{}: {}",
-                "avx512pf",
+                "avx512pf".to_uppercase(),
                 std::is_x86_feature_detected!("avx512pf")
             );
             info!(
                 "{}: {}",
-                "avx512bw",
+                "avx512bw".to_uppercase(),
                 std::is_x86_feature_detected!("avx512bw")
             );
             info!(
                 "{}: {}",
-                "avx512dq",
+                "avx512dq".to_uppercase(),
                 std::is_x86_feature_detected!("avx512dq")
             );
             info!(
                 "{}: {}",
-                "avx512vl",
+                "avx512vl".to_uppercase(),
                 std::is_x86_feature_detected!("avx512vl")
             );
             info!(
                 "{}: {}",
-                "avx512ifma",
+                "avx512ifma".to_uppercase(),
                 std::is_x86_feature_detected!("avx512ifma")
             );
             info!(
                 "{}: {}",
-                "avx512vbmi",
+                "avx512vbmi".to_uppercase(),
                 std::is_x86_feature_detected!("avx512vbmi")
             );
             info!(
                 "{}: {}",
-                "avx512vpopcntdq",
+                "avx512vpopcntdq".to_uppercase(),
                 std::is_x86_feature_detected!("avx512vpopcntdq")
             );
             info!(
                 "{}: {}",
-                "avx512vbmi2",
+                "avx512vbmi2".to_uppercase(),
                 std::is_x86_feature_detected!("avx512vbmi2")
             );
             info!(
                 "{}: {}",
-                "avx512gfni",
+                "avx512gfni".to_uppercase(),
                 std::is_x86_feature_detected!("avx512gfni")
             );
             info!(
                 "{}: {}",
-                "avx512vaes",
+                "avx512vaes".to_uppercase(),
                 std::is_x86_feature_detected!("avx512vaes")
             );
             info!(
                 "{}: {}",
-                "avx512vpclmulqdq",
+                "avx512vpclmulqdq".to_uppercase(),
                 std::is_x86_feature_detected!("avx512vpclmulqdq")
             );
             info!(
                 "{}: {}",
-                "avx512vnni",
+                "avx512vnni".to_uppercase(),
                 std::is_x86_feature_detected!("avx512vnni")
             );
             info!(
                 "{}: {}",
-                "avx512bitalg",
+                "avx512bitalg".to_uppercase(),
                 std::is_x86_feature_detected!("avx512bitalg")
             );
             info!(
                 "{}: {}",
-                "avx512bf16",
+                "avx512bf16".to_uppercase(),
                 std::is_x86_feature_detected!("avx512bf16")
             );
             info!(
                 "{}: {}",
-                "avx512vp2intersect",
+                "avx512vp2intersect".to_uppercase(),
                 std::is_x86_feature_detected!("avx512vp2intersect")
             );
-            info!("{}: {}", "f16c", std::is_x86_feature_detected!("f16c"));
-            info!("{}: {}", "fma", std::is_x86_feature_detected!("fma"));
-            info!("{}: {}", "bmi1", std::is_x86_feature_detected!("bmi1"));
-            info!("{}: {}", "bmi2", std::is_x86_feature_detected!("bmi2"));
-            info!("{}: {}", "abm", std::is_x86_feature_detected!("abm"));
-            info!("{}: {}", "lzcnt", std::is_x86_feature_detected!("lzcnt"));
-            info!("{}: {}", "tbm", std::is_x86_feature_detected!("tbm"));
-            info!("{}: {}", "popcnt", std::is_x86_feature_detected!("popcnt"));
-            info!("{}: {}", "fxsr", std::is_x86_feature_detected!("fxsr"));
-            info!("{}: {}", "xsave", std::is_x86_feature_detected!("xsave"));
             info!(
                 "{}: {}",
-                "xsaveopt",
+                "f16c".to_uppercase(),
+                std::is_x86_feature_detected!("f16c")
+            );
+            info!(
+                "{}: {}",
+                "fma".to_uppercase(),
+                std::is_x86_feature_detected!("fma")
+            );
+            info!(
+                "{}: {}",
+                "bmi1".to_uppercase(),
+                std::is_x86_feature_detected!("bmi1")
+            );
+            info!(
+                "{}: {}",
+                "bmi2".to_uppercase(),
+                std::is_x86_feature_detected!("bmi2")
+            );
+            info!(
+                "{}: {}",
+                "abm".to_uppercase(),
+                std::is_x86_feature_detected!("abm")
+            );
+            info!(
+                "{}: {}",
+                "lzcnt".to_uppercase(),
+                std::is_x86_feature_detected!("lzcnt")
+            );
+            info!(
+                "{}: {}",
+                "tbm".to_uppercase(),
+                std::is_x86_feature_detected!("tbm")
+            );
+            info!(
+                "{}: {}",
+                "popcnt".to_uppercase(),
+                std::is_x86_feature_detected!("popcnt")
+            );
+            info!(
+                "{}: {}",
+                "fxsr".to_uppercase(),
+                std::is_x86_feature_detected!("fxsr")
+            );
+            info!(
+                "{}: {}",
+                "xsave".to_uppercase(),
+                std::is_x86_feature_detected!("xsave")
+            );
+            info!(
+                "{}: {}",
+                "xsaveopt".to_uppercase(),
                 std::is_x86_feature_detected!("xsaveopt")
             );
             info!("{}: {}", "xsaves", std::is_x86_feature_detected!("xsaves"));
             info!("{}: {}", "xsavec", std::is_x86_feature_detected!("xsavec"));
             info!(
                 "{}: {}",
-                "cmpxchg16b",
+                "cmpxchg16b".to_uppercase(),
                 std::is_x86_feature_detected!("cmpxchg16b")
             );
-            info!("{}: {}", "adx", std::is_x86_feature_detected!("adx"));
-            info!("{}: {}", "rtm", std::is_x86_feature_detected!("rtm"));
+            info!(
+                "{}: {}",
+                "adx".to_uppercase(),
+                std::is_x86_feature_detected!("adx")
+            );
+            info!(
+                "{}: {}",
+                "rtm".to_uppercase(),
+                std::is_x86_feature_detected!("rtm")
+            );
         }
 
         for component in sys_info.get_components() {
@@ -234,7 +343,9 @@ impl PlatformSystem {
         let mut glfw =
             glfw::init(glfw::FAIL_ON_ERRORS).expect("Failed to initialize glfw context!");
 
-        glfw.with_connected_monitors(|_, monitors| {
+        let mut gamma_ramps: Vec<(Vec<u16>, Vec<u16>, Vec<u16>)> = Vec::new();
+
+        glfw.with_connected_monitors_mut(|_, monitors| {
             for (i, monitor) in monitors.iter().enumerate() {
                 info!("Monitor: {}", i + 1);
                 info!(
@@ -247,6 +358,17 @@ impl PlatformSystem {
                 info!("Phyical size: {:?}", monitor.get_physical_size());
                 info!("Content scale: {:?}", monitor.get_content_scale());
                 info!("Workarea: {:?}", monitor.get_workarea());
+
+                let gamma_ramp = monitor.get_gamma_ramp();
+                let gamma_red = gamma_ramp.red;
+                let gamma_green = gamma_ramp.green;
+                let gamma_blue = gamma_ramp.blue;
+
+                info!("Gamma ramp red entries: {}", gamma_red.len());
+                info!("Gamma ramp green entries: {}", gamma_green.len());
+                info!("Gamma ramp blue entries: {}", gamma_blue.len());
+
+                gamma_ramps.push((gamma_red, gamma_green, gamma_blue));
 
                 let vids = monitor.get_video_modes();
                 info!("Video modes: {}", vids.len());
@@ -263,6 +385,32 @@ impl PlatformSystem {
             }
         });
 
+        info!("Calculating gamma ramps...");
+
+        for (i, ramp) in gamma_ramps.iter().enumerate() {
+            let (r, g, b) = ramp;
+            let r_len = r.len() as u128;
+            let g_len = g.len() as u128;
+            let b_len = b.len() as u128;
+            let r_sum: u128 = r
+                .into_par_iter()
+                .fold_with(0_u128, |a: u128, b: &u16| a.wrapping_add(*b as u128))
+                .reduce(|| 0, u128::wrapping_add);
+
+            let g_sum: u128 = g
+                .into_par_iter()
+                .fold_with(0_u128, |a: u128, b: &u16| a.wrapping_add(*b as u128))
+                .reduce(|| 0, u128::wrapping_add);
+
+            let b_sum: u128 = b
+                .into_par_iter()
+                .fold_with(0_u128, |a: u128, b: &u16| a.wrapping_add(*b as u128))
+                .reduce(|| 0, u128::wrapping_add);
+            info!("Gamma ramp: {}, Red average: {}", i + 1, r_sum / r_len);
+            info!("Gamma ramp: {}, Green average: {}", i + 1, g_sum / g_len);
+            info!("Gamma ramp: {}, Blue average: {}", i + 1, b_sum / b_len);
+        }
+
         const WIN_TITLE: &str = "KESTD Ronin Advanced - Simulation";
 
         fn make_windowed(
@@ -278,6 +426,7 @@ impl PlatformSystem {
             }
             glfw.window_hint(glfw::WindowHint::ClientApi(glfw::ClientApiHint::NoApi));
             glfw.window_hint(glfw::WindowHint::Resizable(false));
+            glfw.window_hint(glfw::WindowHint::Visible(false));
             if let Some(win) = glfw.create_window(
                 *width as _,
                 *height as _,
@@ -331,10 +480,7 @@ impl PlatformSystem {
 impl System<()> for PlatformSystem {
     fn initialize(cfg: &mut CoreConfig, _: &()) -> Self {
         let sys_info = Self::get_and_print_system_info();
-        let (glfw, mut window, events) = Self::create_window(cfg);
-
-        window.focus();
-        window.show();
+        let (glfw, window, events) = Self::create_window(cfg);
 
         PlatformSystem {
             glfw,
@@ -342,6 +488,11 @@ impl System<()> for PlatformSystem {
             events,
             sys_info,
         }
+    }
+
+    fn prepare(&mut self) {
+        self.window.focus();
+        self.window.show();
     }
 
     fn tick(&mut self) -> bool {
