@@ -13,6 +13,31 @@ pub struct PlatformSystem {
     pub sys_info: sysinfo::System,
 }
 
+impl System<()> for PlatformSystem {
+    fn initialize(cfg: &mut CoreConfig, _: &()) -> Self {
+        let sys_info = Self::get_and_print_system_info();
+        let (glfw, window, events) = Self::create_window(cfg);
+
+        PlatformSystem {
+            glfw,
+            window,
+            events,
+            sys_info,
+        }
+    }
+
+    fn prepare(&mut self) {
+        self.window.focus();
+        self.window.show();
+    }
+
+    fn tick(&mut self) -> bool {
+        self.glfw.poll_events();
+        for (_, _) in glfw::flush_messages(&self.events) {}
+        !self.window.should_close()
+    }
+}
+
 impl PlatformSystem {
     fn get_and_print_system_info() -> sysinfo::System {
         let mut sys_info = sysinfo::System::new_all();
@@ -474,36 +499,5 @@ impl PlatformSystem {
         }
         .expect("Failed to create window!");
         (glfw, window, events)
-    }
-}
-
-impl System<()> for PlatformSystem {
-    fn initialize(cfg: &mut CoreConfig, _: &()) -> Self {
-        let sys_info = Self::get_and_print_system_info();
-        let (glfw, window, events) = Self::create_window(cfg);
-
-        PlatformSystem {
-            glfw,
-            window,
-            events,
-            sys_info,
-        }
-    }
-
-    fn prepare(&mut self) {
-        self.window.focus();
-        self.window.show();
-    }
-
-    fn tick(&mut self) -> bool {
-        self.glfw.poll_events();
-        for (_, _) in glfw::flush_messages(&self.events) {}
-        !self.window.should_close()
-    }
-}
-
-impl Drop for PlatformSystem {
-    fn drop(&mut self) {
-        self.window.hide()
     }
 }
