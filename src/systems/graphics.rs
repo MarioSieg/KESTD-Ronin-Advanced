@@ -1,11 +1,11 @@
 use super::System;
 use crate::config::CoreConfig;
-use crate::impls::graphics::Drivers;
+use crate::impls::graphics::{Drivers, ShaderPipeline, ShaderPipelineDescriptor};
 use crate::load_shader;
 
 pub struct GraphicsSystem {
     drivers: Drivers,
-    render_pipeline: wgpu::RenderPipeline,
+    lambert_pipeline: ShaderPipeline,
 }
 
 impl System for GraphicsSystem {
@@ -17,33 +17,13 @@ impl System for GraphicsSystem {
 
         let drivers = Drivers::initialize(window, is_power_safe_mode, use_vsync);
 
-        let lambert = drivers.load_shader_bundle(load_shader!("lambert"));
-
-        let pipeline_layout =
-            drivers
-                .device
-                .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                    label: None,
-                    bind_group_layouts: &[],
-                    push_constant_ranges: &[],
-                });
-
-        let render_pipeline =
-            drivers
-                .device
-                .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                    label: None,
-                    layout: Some(&pipeline_layout),
-                    vertex: lambert.vertex_state(),
-                    fragment: Some(lambert.fragment_state()),
-                    primitive: wgpu::PrimitiveState::default(),
-                    depth_stencil: None,
-                    multisample: wgpu::MultisampleState::default(),
-                });
+        let lambert_pipeline = drivers.create_shader_bundle(ShaderPipelineDescriptor::new_simple(
+            load_shader!("lambert"),
+        ));
 
         Self {
             drivers,
-            render_pipeline,
+            lambert_pipeline,
         }
     }
 
@@ -51,7 +31,7 @@ impl System for GraphicsSystem {
         let mut frame = self.drivers.begin_frame();
         {
             let mut pass = frame.create_pass();
-            pass.set_pipeline(&self.render_pipeline);
+            pass.set_pipeline(&self.lambert_pipeline.render_pipeline);
             pass.draw(0..3, 0..1);
         }
 
