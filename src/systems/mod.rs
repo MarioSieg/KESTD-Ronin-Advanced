@@ -18,9 +18,9 @@ pub trait System<T> {
 }
 
 pub struct SystemSupervisor {
-    pub platform: PlatformSystem,
-    pub memory: MemorySystem,
-    pub graphics: GraphicsSystem,
+    platform: PlatformSystem,
+    memory: MemorySystem,
+    graphics: GraphicsSystem,
 }
 
 impl SystemSupervisor {

@@ -1,6 +1,6 @@
 use super::config::CoreConfig;
 use super::systems::SystemSupervisor;
-use indicatif::HumanDuration;
+use humantime::Duration;
 use log::*;
 use std::io::Write;
 use std::process;
@@ -55,10 +55,40 @@ impl Engine {
 
         dispatch.apply()
     }
-}
 
-impl Engine {
+    fn install_panic_hook() {
+        // Only use custom panic handler if we are in release mode:
+        #[cfg(not(debug_assertions))]
+        std::panic::set_hook(Box::new(|panic_info: &core::panic::PanicInfo| {
+            // get info:
+            let (file, line) = if let Some(loc) = panic_info.location() {
+                (loc.file(), loc.line())
+            } else {
+                ("", 0)
+            };
+            let info = panic_info.payload().downcast_ref::<&str>().unwrap_or(&"");
+
+            // print to stdout:
+            println!(
+                "System panic occurred in file '{}' at line {}! Message: {:?}",
+                file, line, info
+            );
+            let _ = std::io::stdout().flush();
+
+            // create message box:
+            let _ = msgbox::create(
+                "Engine System Panic",
+                &format!(
+                    "System panic occurred in file '{}' at line {}! Message: {:?}",
+                    file, line, info
+                ),
+                msgbox::IconType::Error,
+            );
+        }));
+    }
+
     pub fn initialize() -> Box<Self> {
+        Self::install_panic_hook();
         let clock = Instant::now();
         let _ = Self::create_logger();
         info!("Initializing KESTD Ronin simulation system...");
@@ -68,7 +98,7 @@ impl Engine {
         let this = Self { config, systems };
         info!(
             "System online! Boot time: {}",
-            HumanDuration(clock.elapsed())
+            Duration::from(clock.elapsed())
         );
         Box::new(this)
     }
@@ -87,7 +117,7 @@ impl Engine {
 
         info!(
             "Simulation stopped. Simulated for {} with {} cycles!",
-            HumanDuration(clock.elapsed()),
+            Duration::from(clock.elapsed()),
             cycles
         );
         cycles
