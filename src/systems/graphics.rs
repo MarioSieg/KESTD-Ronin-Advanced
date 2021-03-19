@@ -1,10 +1,14 @@
 use super::prelude::*;
 use crate::impls::graphics::prelude::*;
 use crate::impls::platform::prelude::WindowHandle;
+use crate::resources::mesh::Mesh;
+use crate::resources::ResourceImporteur;
+use std::path::PathBuf;
+use wgpu::IndexFormat;
 
 pub struct GraphicsSystem {
-    drivers: Drivers,
-    lambert_pipeline: ShaderPipeline,
+    pub drivers: Drivers,
+    pub lambert_pipeline: ShaderPipeline,
 }
 
 impl System for GraphicsSystem {
@@ -16,9 +20,7 @@ impl System for GraphicsSystem {
 
         let drivers = Drivers::initialize(window, is_power_safe_mode, use_vsync);
 
-        let lambert_pipeline = drivers.create_shader_bundle(ShaderPipelineDescriptor::new_simple(
-            load_shader!("lambert"),
-        ));
+        let lambert_pipeline = pipelines::lambert::create(&drivers);
 
         Self {
             drivers,
@@ -27,11 +29,16 @@ impl System for GraphicsSystem {
     }
 
     fn tick(&mut self) -> bool {
+        let mesh = Mesh::load(self, PathBuf::from("")).unwrap();
+
         let mut frame = self.drivers.begin_frame();
         {
             let mut pass = frame.create_pass();
             pass.set_pipeline(&self.lambert_pipeline.render_pipeline);
-            pass.draw(0..3, 0..1);
+            pass.set_bind_group(0, &self.lambert_pipeline.bind_group, &[]);
+            pass.set_index_buffer(mesh.index_buffer().slice(..), IndexFormat::Uint16);
+            pass.set_vertex_buffer(0, mesh.vertex_buffer().slice(..));
+            pass.draw_indexed(0..mesh.indices().len() as u32, 0, 0..1)
         }
 
         frame.end();

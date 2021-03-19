@@ -8,6 +8,7 @@ pub struct ShaderPipeline {
     pub fs_targets: SmallVec<[ColorTargetState; 8]>,
     pub pipeline_layout: PipelineLayout,
     pub render_pipeline: RenderPipeline,
+    pub bind_group: BindGroup,
 }
 
 impl ShaderPipeline {
@@ -15,11 +16,18 @@ impl ShaderPipeline {
         let vs_module = drivers.device.create_shader_module(&desc.modules.0);
         let fs_module = drivers.device.create_shader_module(&desc.modules.1);
         let fs_targets = smallvec![drivers.swap_chain_format.into()];
+        let bind_group_layout =
+            drivers
+                .device
+                .create_bind_group_layout(&BindGroupLayoutDescriptor {
+                    label: None,
+                    entries: desc.bind_group_layouts,
+                });
         let pipeline_layout = drivers
             .device
             .create_pipeline_layout(&PipelineLayoutDescriptor {
                 label: None,
-                bind_group_layouts: desc.bind_group_layouts,
+                bind_group_layouts: &[&bind_group_layout][..],
                 push_constant_ranges: desc.push_constant_ranges,
             });
         let render_pipeline = drivers
@@ -30,7 +38,7 @@ impl ShaderPipeline {
                 vertex: VertexState {
                     module: &vs_module,
                     entry_point: SHADER_ENTRY,
-                    buffers: &[],
+                    buffers: desc.vertex_layouts,
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
@@ -39,7 +47,14 @@ impl ShaderPipeline {
                 }),
                 primitive: desc.primitive_state,
                 depth_stencil: desc.depth_stencil,
-                multisample: desc.multisample,
+                multisample: desc.multi_sample,
+            });
+        let bind_group = drivers
+            .device
+            .create_bind_group(&wgpu::BindGroupDescriptor {
+                layout: &bind_group_layout,
+                entries: &[],
+                label: None,
             });
         Self {
             vs_module,
@@ -47,32 +62,19 @@ impl ShaderPipeline {
             fs_targets,
             pipeline_layout,
             render_pipeline,
+            bind_group,
         }
     }
 }
 
 pub struct ShaderPipelineDescriptor<'a> {
     pub modules: &'a (ShaderModuleDescriptor<'a>, ShaderModuleDescriptor<'a>),
-    pub bind_group_layouts: &'a [&'a BindGroupLayout],
+    pub bind_group_layouts: &'a [BindGroupLayoutEntry],
     pub push_constant_ranges: &'a [PushConstantRange],
     pub primitive_state: PrimitiveState,
     pub depth_stencil: Option<DepthStencilState>,
-    pub multisample: MultisampleState,
-}
-
-impl<'a> ShaderPipelineDescriptor<'a> {
-    pub fn new_simple(
-        modules: &'a (ShaderModuleDescriptor<'a>, ShaderModuleDescriptor<'a>),
-    ) -> Self {
-        Self {
-            modules,
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
-            primitive_state: PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: MultisampleState::default(),
-        }
-    }
+    pub multi_sample: MultisampleState,
+    pub vertex_layouts: &'a [VertexBufferLayout<'a>],
 }
 
 pub const SHADER_ENTRY: &str = "main";
@@ -82,12 +84,12 @@ macro_rules! load_shader {
     ($name:literal) => {
         &(
             wgpu::include_spirv!(concat!(
-                "../../db/shaders/fixed_pipelines/",
+                "../../../../db/shaders/fixed_pipelines/",
                 $name,
                 "/final/shader.vert.spv"
             )),
             wgpu::include_spirv!(concat!(
-                "../../db/shaders/fixed_pipelines/",
+                "../../../../db/shaders/fixed_pipelines/",
                 $name,
                 "/final/shader.frag.spv"
             )),

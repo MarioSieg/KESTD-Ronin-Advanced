@@ -1,4 +1,6 @@
+pub mod matrix;
 pub mod pipeline;
+pub mod pipelines;
 pub mod prelude;
 
 use log::info;
@@ -44,7 +46,7 @@ impl<'a> Frame<'a> {
 }
 
 impl Drivers {
-    pub fn create_shader_bundle(&self, desc: ShaderPipelineDescriptor) -> ShaderPipeline {
+    pub fn create_shader_pipeline(&self, desc: ShaderPipelineDescriptor) -> ShaderPipeline {
         ShaderPipeline::create_shader_bundle(self, desc)
     }
 
