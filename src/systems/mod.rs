@@ -34,7 +34,7 @@ impl SystemSupervisor {
         let memory = MemorySystem::initialize(cfg, &());
 
         info!("Initializing graphics system...");
-        let graphics = GraphicsSystem::initialize(cfg, &platform.window);
+        let graphics = GraphicsSystem::initialize(cfg, &platform.win_data.window);
 
         Self {
             platform,
@@ -52,4 +52,9 @@ impl SystemSupervisor {
     pub fn tick_all(&mut self) -> bool {
         self.platform.tick() && self.memory.tick() && self.graphics.tick()
     }
+}
+
+pub mod prelude {
+    pub use super::System;
+    pub use crate::config::*;
 }

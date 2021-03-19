@@ -1,5 +1,8 @@
+pub mod pipeline;
+pub mod prelude;
+
 use log::info;
-use smallvec::{smallvec, SmallVec};
+use pipeline::{ShaderPipeline, ShaderPipelineDescriptor};
 use wgpu::*;
 
 pub struct Drivers {
@@ -40,96 +43,9 @@ impl<'a> Frame<'a> {
     }
 }
 
-pub struct ShaderPipeline {
-    pub vs_module: ShaderModule,
-    pub fs_module: ShaderModule,
-    pub fs_targets: SmallVec<[ColorTargetState; 8]>,
-    pub pipeline_layout: PipelineLayout,
-    pub render_pipeline: RenderPipeline,
-}
-
-pub const SHADER_ENTRY: &str = "main";
-
-#[macro_export]
-macro_rules! load_shader {
-    ($name:literal) => {
-        &(
-            wgpu::include_spirv!(concat!(
-                "../../db/shaders/fixed_pipelines/",
-                $name,
-                "/final/shader.vert.spv"
-            )),
-            wgpu::include_spirv!(concat!(
-                "../../db/shaders/fixed_pipelines/",
-                $name,
-                "/final/shader.frag.spv"
-            )),
-        )
-    };
-}
-
-pub struct ShaderPipelineDescriptor<'a> {
-    pub modules: &'a (ShaderModuleDescriptor<'a>, ShaderModuleDescriptor<'a>),
-    pub bind_group_layouts: &'a [&'a BindGroupLayout],
-    pub push_constant_ranges: &'a [PushConstantRange],
-    pub primitive_state: PrimitiveState,
-    pub depth_stencil: Option<DepthStencilState>,
-    pub multisample: MultisampleState,
-}
-
-impl<'a> ShaderPipelineDescriptor<'a> {
-    pub fn new_simple(
-        modules: &'a (ShaderModuleDescriptor<'a>, ShaderModuleDescriptor<'a>),
-    ) -> Self {
-        Self {
-            modules,
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
-            primitive_state: PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: MultisampleState::default(),
-        }
-    }
-}
-
 impl Drivers {
     pub fn create_shader_bundle(&self, desc: ShaderPipelineDescriptor) -> ShaderPipeline {
-        let vs_module = self.device.create_shader_module(&desc.modules.0);
-        let fs_module = self.device.create_shader_module(&desc.modules.1);
-        let fs_targets = smallvec![self.swap_chain_format.into()];
-        let pipeline_layout = self
-            .device
-            .create_pipeline_layout(&PipelineLayoutDescriptor {
-                label: None,
-                bind_group_layouts: desc.bind_group_layouts,
-                push_constant_ranges: desc.push_constant_ranges,
-            });
-        let render_pipeline = self
-            .device
-            .create_render_pipeline(&RenderPipelineDescriptor {
-                label: None,
-                layout: Some(&pipeline_layout),
-                vertex: VertexState {
-                    module: &vs_module,
-                    entry_point: SHADER_ENTRY,
-                    buffers: &[],
-                },
-                fragment: Some(FragmentState {
-                    module: &fs_module,
-                    entry_point: SHADER_ENTRY,
-                    targets: &fs_targets[..],
-                }),
-                primitive: desc.primitive_state,
-                depth_stencil: desc.depth_stencil,
-                multisample: desc.multisample,
-            });
-        ShaderPipeline {
-            vs_module,
-            fs_module,
-            fs_targets,
-            pipeline_layout,
-            render_pipeline,
-        }
+        ShaderPipeline::create_shader_bundle(self, desc)
     }
 
     pub fn begin_frame(&self) -> Frame {

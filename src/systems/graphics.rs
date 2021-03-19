@@ -1,7 +1,6 @@
-use super::System;
-use crate::config::CoreConfig;
-use crate::impls::graphics::{Drivers, ShaderPipeline, ShaderPipelineDescriptor};
-use crate::load_shader;
+use super::prelude::*;
+use crate::impls::graphics::prelude::*;
+use crate::impls::platform::prelude::WindowHandle;
 
 pub struct GraphicsSystem {
     drivers: Drivers,
@@ -9,7 +8,7 @@ pub struct GraphicsSystem {
 }
 
 impl System for GraphicsSystem {
-    type Args = glfw::Window;
+    type Args = WindowHandle;
 
     fn initialize(cfg: &mut CoreConfig, window: &Self::Args) -> Self {
         let is_power_safe_mode = cfg.application_config.power_safe_mode;
