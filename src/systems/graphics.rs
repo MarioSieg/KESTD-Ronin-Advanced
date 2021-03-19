@@ -58,34 +58,14 @@ impl System<glfw::Window> for GraphicsSystem {
     }
 
     fn tick(&mut self) -> bool {
-        let frame = self
-            .drivers
-            .swap_chain
-            .get_current_frame()
-            .expect("Failed to acquire next swap chain texture!")
-            .output;
-        let mut encoder = self
-            .drivers
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        let mut frame = self.drivers.begin_frame();
         {
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: None,
-                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &frame.view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
-                        store: true,
-                    },
-                }],
-                depth_stencil_attachment: None,
-            });
+            let mut pass = frame.create_pass();
             pass.set_pipeline(&self.render_pipeline);
             pass.draw(0..3, 0..1);
         }
 
-        self.drivers.queue.submit(Some(encoder.finish()));
+        frame.end();
         true
     }
 }

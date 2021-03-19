@@ -1,5 +1,4 @@
 use log::info;
-use std::ops::BitOr;
 use wgpu::*;
 
 pub struct Drivers {
@@ -13,7 +12,50 @@ pub struct Drivers {
     pub swap_chain_format: TextureFormat,
 }
 
+pub struct Frame<'a> {
+    pub view: SwapChainTexture,
+    pub encoder: CommandEncoder,
+    pub queue: &'a Queue,
+}
+
+impl<'a> Frame<'a> {
+    pub fn create_pass(&mut self) -> RenderPass {
+        self.encoder.begin_render_pass(&RenderPassDescriptor {
+            label: None,
+            color_attachments: &[RenderPassColorAttachmentDescriptor {
+                attachment: &self.view.view,
+                resolve_target: None,
+                ops: Operations {
+                    load: LoadOp::Clear(Color::BLUE),
+                    store: true,
+                },
+            }],
+            depth_stencil_attachment: None,
+        })
+    }
+
+    pub fn end(self) {
+        self.queue.submit(Some(self.encoder.finish()));
+    }
+}
+
 impl Drivers {
+    pub fn begin_frame(&self) -> Frame {
+        let view = self
+            .swap_chain
+            .get_current_frame()
+            .expect("Failed to acquire next swap chain texture!")
+            .output;
+        let encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        Frame {
+            view,
+            encoder,
+            queue: &self.queue,
+        }
+    }
+
     pub fn initialize(window: &glfw::Window, power_safe_mode: bool, vsync: bool) -> Self {
         let instance = Instance::new(BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
@@ -26,7 +68,7 @@ impl Drivers {
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface);
 
         let swap_chain_desc = SwapChainDescriptor {
-            usage: TextureUsage::RENDER_ATTACHMENT.bitor(TextureUsage::COPY_SRC),
+            usage: TextureUsage::RENDER_ATTACHMENT | TextureUsage::COPY_SRC,
             format: swap_chain_format,
             width: window.get_framebuffer_size().0 as _,
             height: window.get_framebuffer_size().1 as _,
