@@ -14,7 +14,7 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub const FILE_NAME: &'static str = "config/app.ini";
+    pub const FILE_NAME: &'static str = "config/app.yml.ini";
 }
 
 impl Default for AppConfig {
@@ -37,7 +37,7 @@ pub struct MemoryConfig {
 }
 
 impl MemoryConfig {
-    pub const FILE_NAME: &'static str = "config/memory.ini";
+    pub const FILE_NAME: &'static str = "config/memory.yml.ini";
 }
 
 impl Default for MemoryConfig {
@@ -65,7 +65,7 @@ pub struct DisplayConfig {
 }
 
 impl DisplayConfig {
-    pub const FILE_NAME: &'static str = "config/display.ini";
+    pub const FILE_NAME: &'static str = "config/display.yml.ini";
 }
 
 impl Default for DisplayConfig {
