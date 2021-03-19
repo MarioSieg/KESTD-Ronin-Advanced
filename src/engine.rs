@@ -50,6 +50,7 @@ impl Engine {
             dispatch = dispatch.level_for("gfx_backend_vulkan", LevelFilter::Off);
             dispatch = dispatch.level_for("gfx_backend_dx11", LevelFilter::Off);
             dispatch = dispatch.level_for("gfx_backend_dx12", LevelFilter::Off);
+            dispatch = dispatch.level_for("naga", LevelFilter::Off);
         }
 
         dispatch.apply()
@@ -78,7 +79,7 @@ impl Engine {
         let clock = Instant::now();
 
         let mut cycles = 0;
-        while !self.tick() {
+        while self.tick() {
             cycles += 1;
         }
 

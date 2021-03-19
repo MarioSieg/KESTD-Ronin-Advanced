@@ -1,6 +1,7 @@
 use super::System;
 use crate::config::CoreConfig;
 use log::info;
+use std::ops::BitOr;
 
 pub struct GraphicsSystem {
     pub instance: wgpu::Instance,
@@ -8,6 +9,9 @@ pub struct GraphicsSystem {
     pub adapter: wgpu::Adapter,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
+
+    pub render_pipeline: wgpu::RenderPipeline,
+    pub swap_chain: wgpu::SwapChain,
 }
 
 impl GraphicsSystem {
@@ -52,6 +56,49 @@ impl System<glfw::Window> for GraphicsSystem {
             cfg.application_config.power_safe_mode,
         ));
 
+        let vertex_shader = device.create_shader_module(&wgpu::include_spirv!(
+            "../../db/shaders/fixed_pipelines/lambert/final/shader.vert.spv"
+        ));
+        let fragment_shader = device.create_shader_module(&wgpu::include_spirv!(
+            "../../db/shaders/fixed_pipelines/lambert/final/shader.frag.spv"
+        ));
+
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+
+        let swapchain_format = adapter.get_swap_chain_preferred_format(&surface);
+
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: None,
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &vertex_shader,
+                entry_point: "main",
+                buffers: &[],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &fragment_shader,
+                entry_point: "main",
+                targets: &[swapchain_format.into()],
+            }),
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+        });
+
+        let sc_desc = wgpu::SwapChainDescriptor {
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT.bitor(wgpu::TextureUsage::COPY_SRC),
+            format: swapchain_format,
+            width: window.get_framebuffer_size().0 as _,
+            height: window.get_framebuffer_size().1 as _,
+            present_mode: wgpu::PresentMode::Mailbox,
+        };
+
+        let swap_chain = device.create_swap_chain(&surface, &sc_desc);
+
         let info = adapter.get_info();
         info!("GPU: {}", info.name);
         info!("API: {:?}", info.backend);
@@ -63,10 +110,38 @@ impl System<glfw::Window> for GraphicsSystem {
             adapter,
             device,
             queue,
+            render_pipeline,
+            swap_chain,
         }
     }
 
     fn tick(&mut self) -> bool {
+        let frame = self
+            .swap_chain
+            .get_current_frame()
+            .expect("Failed to acquire next swap chain texture!")
+            .output;
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        {
+            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: None,
+                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &frame.view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::GREEN),
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+            });
+            rpass.set_pipeline(&self.render_pipeline);
+            rpass.draw(0..3, 0..1);
+        }
+
+        self.queue.submit(Some(encoder.finish()));
         true
     }
 }

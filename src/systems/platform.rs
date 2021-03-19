@@ -256,9 +256,9 @@ impl PlatformSystem {
                     info!("Width: {}", vid.width);
                     info!("Height: {}", vid.height);
                     info!("Refresh rate: {}Hz", vid.refresh_rate);
-                    info!("R-Bits: {:b}", vid.red_bits);
-                    info!("G-Bits: {:b}", vid.green_bits);
-                    info!("B-Bits: {:b}", vid.blue_bits);
+                    info!("R-Bits: {}", vid.red_bits);
+                    info!("G-Bits: {}", vid.green_bits);
+                    info!("B-Bits: {}", vid.blue_bits);
                 }
             }
         });
@@ -278,12 +278,18 @@ impl PlatformSystem {
             }
             glfw.window_hint(glfw::WindowHint::ClientApi(glfw::ClientApiHint::NoApi));
             glfw.window_hint(glfw::WindowHint::Resizable(false));
-            glfw.create_window(
+            if let Some(win) = glfw.create_window(
                 *width as _,
                 *height as _,
                 WIN_TITLE,
                 glfw::WindowMode::Windowed,
-            )
+            ) {
+                *width = win.0.get_framebuffer_size().0 as _;
+                *height = win.0.get_framebuffer_size().1 as _;
+                Some(win)
+            } else {
+                None
+            }
         };
 
         let (window, events) = if cfg.display_config.window_mode == WindowMode::Windowed {
@@ -341,7 +347,7 @@ impl System<()> for PlatformSystem {
     fn tick(&mut self) -> bool {
         self.glfw.poll_events();
         for (_, _) in glfw::flush_messages(&self.events) {}
-        self.window.should_close()
+        !self.window.should_close()
     }
 }
 
