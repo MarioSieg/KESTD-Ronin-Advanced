@@ -7,14 +7,16 @@ use std::sync::mpsc::Receiver;
 use sysinfo::{DiskExt, NetworkExt, ProcessorExt, SystemExt, UserExt};
 
 pub struct PlatformSystem {
-    pub glfw: glfw::Glfw,
-    pub window: glfw::Window,
-    pub events: Receiver<(f64, glfw::WindowEvent)>,
+    glfw: glfw::Glfw,
+    pub(super) window: glfw::Window,
+    events: Receiver<(f64, glfw::WindowEvent)>,
     pub sys_info: sysinfo::System,
 }
 
-impl System<()> for PlatformSystem {
-    fn initialize(cfg: &mut CoreConfig, _: &()) -> Self {
+impl System for PlatformSystem {
+    type Args = ();
+
+    fn initialize(cfg: &mut CoreConfig, _: &Self::Args) -> Self {
         let sys_info = Self::get_and_print_system_info();
         let (glfw, window, events) = Self::create_window(cfg);
 

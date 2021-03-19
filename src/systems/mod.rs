@@ -9,8 +9,10 @@ use graphics::GraphicsSystem;
 use memory::MemorySystem;
 use platform::PlatformSystem;
 
-pub trait System<T> {
-    fn initialize(cfg: &mut CoreConfig, data: &T) -> Self;
+pub trait System {
+    type Args;
+
+    fn initialize(cfg: &mut CoreConfig, data: &Self::Args) -> Self;
     fn prepare(&mut self) {}
     fn tick(&mut self) -> bool {
         true
@@ -18,9 +20,9 @@ pub trait System<T> {
 }
 
 pub struct SystemSupervisor {
-    platform: PlatformSystem,
-    memory: MemorySystem,
-    graphics: GraphicsSystem,
+    pub platform: PlatformSystem,
+    pub memory: MemorySystem,
+    pub graphics: GraphicsSystem,
 }
 
 impl SystemSupervisor {

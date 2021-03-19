@@ -1,25 +1,23 @@
 use super::System;
 use crate::config::CoreConfig;
 use crate::impls::graphics::Drivers;
+use crate::load_shader;
 
 pub struct GraphicsSystem {
-    pub drivers: Drivers,
-    pub render_pipeline: wgpu::RenderPipeline,
+    drivers: Drivers,
+    render_pipeline: wgpu::RenderPipeline,
 }
 
-impl System<glfw::Window> for GraphicsSystem {
-    fn initialize(cfg: &mut CoreConfig, window: &glfw::Window) -> Self {
+impl System for GraphicsSystem {
+    type Args = glfw::Window;
+
+    fn initialize(cfg: &mut CoreConfig, window: &Self::Args) -> Self {
         let is_power_safe_mode = cfg.application_config.power_safe_mode;
         let use_vsync = cfg.display_config.vsync;
 
         let drivers = Drivers::initialize(window, is_power_safe_mode, use_vsync);
 
-        let vertex_shader = drivers.device.create_shader_module(&wgpu::include_spirv!(
-            "../../db/shaders/fixed_pipelines/lambert/final/shader.vert.spv"
-        ));
-        let fragment_shader = drivers.device.create_shader_module(&wgpu::include_spirv!(
-            "../../db/shaders/fixed_pipelines/lambert/final/shader.frag.spv"
-        ));
+        let lambert = drivers.load_shader_bundle(load_shader!("lambert"));
 
         let pipeline_layout =
             drivers
@@ -36,16 +34,8 @@ impl System<glfw::Window> for GraphicsSystem {
                 .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                     label: None,
                     layout: Some(&pipeline_layout),
-                    vertex: wgpu::VertexState {
-                        module: &vertex_shader,
-                        entry_point: "main",
-                        buffers: &[],
-                    },
-                    fragment: Some(wgpu::FragmentState {
-                        module: &fragment_shader,
-                        entry_point: "main",
-                        targets: &[drivers.swap_chain_format.into()],
-                    }),
+                    vertex: lambert.vertex_state(),
+                    fragment: Some(lambert.fragment_state()),
                     primitive: wgpu::PrimitiveState::default(),
                     depth_stencil: None,
                     multisample: wgpu::MultisampleState::default(),

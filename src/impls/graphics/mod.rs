@@ -1,4 +1,5 @@
 use log::info;
+use smallvec::{smallvec, SmallVec};
 use wgpu::*;
 
 pub struct Drivers {
@@ -39,7 +40,65 @@ impl<'a> Frame<'a> {
     }
 }
 
+pub struct ShaderBundle {
+    pub vs_module: ShaderModule,
+    pub fs_module: ShaderModule,
+    pub fs_targets: SmallVec<[ColorTargetState; 8]>,
+}
+
+impl ShaderBundle {
+    pub fn vertex_state(&self) -> VertexState {
+        VertexState {
+            module: &self.vs_module,
+            entry_point: SHADER_ENTRY,
+            buffers: &[],
+        }
+    }
+
+    pub fn fragment_state(&self) -> FragmentState {
+        FragmentState {
+            module: &self.fs_module,
+            entry_point: SHADER_ENTRY,
+            targets: &self.fs_targets[..],
+        }
+    }
+}
+
+pub const SHADER_ENTRY: &str = "main";
+
+#[macro_export]
+macro_rules! load_shader {
+    ($name:literal) => {
+        &(
+            wgpu::include_spirv!(concat!(
+                "../../db/shaders/fixed_pipelines/",
+                $name,
+                "/final/shader.vert.spv"
+            )),
+            wgpu::include_spirv!(concat!(
+                "../../db/shaders/fixed_pipelines/",
+                $name,
+                "/final/shader.frag.spv"
+            )),
+        )
+    };
+}
+
 impl Drivers {
+    pub fn load_shader_bundle(
+        &self,
+        modules: &(ShaderModuleDescriptor, ShaderModuleDescriptor),
+    ) -> ShaderBundle {
+        let vs_module = self.device.create_shader_module(&modules.0);
+        let fs_module = self.device.create_shader_module(&modules.1);
+        let fs_targets = smallvec![self.swap_chain_format.into()];
+        ShaderBundle {
+            vs_module,
+            fs_module,
+            fs_targets,
+        }
+    }
+
     pub fn begin_frame(&self) -> Frame {
         let view = self
             .swap_chain
