@@ -1,7 +1,10 @@
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::default::Default;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+pub const CONFIG_DIR: &str = "config";
 
 #[derive(Serialize, Deserialize)]
 pub struct AppConfig {
@@ -14,7 +17,7 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub const FILE_NAME: &'static str = "config/app.yml.ini";
+    pub const FILE_NAME: &'static str = "app.ini";
 }
 
 impl Default for AppConfig {
@@ -37,7 +40,7 @@ pub struct MemoryConfig {
 }
 
 impl MemoryConfig {
-    pub const FILE_NAME: &'static str = "config/memory.yml.ini";
+    pub const FILE_NAME: &'static str = "memory.ini";
 }
 
 impl Default for MemoryConfig {
@@ -65,7 +68,7 @@ pub struct DisplayConfig {
 }
 
 impl DisplayConfig {
-    pub const FILE_NAME: &'static str = "config/display.yml.ini";
+    pub const FILE_NAME: &'static str = "display.ini";
 }
 
 impl Default for DisplayConfig {
@@ -89,23 +92,47 @@ pub struct CoreConfig {
 
 impl CoreConfig {
     pub fn load() -> Self {
-        if !Path::new("config/").exists() {
+        let config_dir = PathBuf::from(CONFIG_DIR);
+        info!("Parsing config from dir: {:?}", config_dir);
+        if !config_dir.exists() {
+            warn!("Config directory does not exist! Creating config...");
             let this = Self::default();
             let _ = this.save();
             return this;
         }
         let application_config = serde_yaml::from_str::<AppConfig>(
-            &fs::read_to_string(Path::new(AppConfig::FILE_NAME)).unwrap_or_default(),
+            &fs::read_to_string(config_dir.join(Path::new(AppConfig::FILE_NAME)))
+                .unwrap_or_default(),
         )
-        .unwrap_or_default();
+        .unwrap_or_else(|_| {
+            warn!(
+                "Failed to load: \"{}\"! Setting default values...",
+                AppConfig::FILE_NAME
+            );
+            std::default::Default::default()
+        });
         let memory_config = serde_yaml::from_str::<MemoryConfig>(
-            &fs::read_to_string(Path::new(MemoryConfig::FILE_NAME)).unwrap_or_default(),
+            &fs::read_to_string(config_dir.join(Path::new(MemoryConfig::FILE_NAME)))
+                .unwrap_or_default(),
         )
-        .unwrap_or_default();
+        .unwrap_or_else(|_| {
+            warn!(
+                "Failed to load: \"{}\"! Setting default values...",
+                MemoryConfig::FILE_NAME
+            );
+            std::default::Default::default()
+        });
         let display_config = serde_yaml::from_str::<DisplayConfig>(
-            &fs::read_to_string(Path::new(DisplayConfig::FILE_NAME)).unwrap_or_default(),
+            &fs::read_to_string(config_dir.join(Path::new(DisplayConfig::FILE_NAME)))
+                .unwrap_or_default(),
         )
-        .unwrap_or_default();
+        .unwrap_or_else(|_| {
+            warn!(
+                "Failed to load: \"{}\"! Setting default values...",
+                DisplayConfig::FILE_NAME
+            );
+            std::default::Default::default()
+        });
         Self {
             application_config,
             memory_config,
@@ -114,19 +141,20 @@ impl CoreConfig {
     }
 
     pub fn save(&self) -> std::io::Result<()> {
-        if !Path::new("config/").exists() {
-            fs::create_dir("config/")?;
+        let config_dir = &PathBuf::from(CONFIG_DIR);
+        if !config_dir.exists() {
+            fs::create_dir(config_dir)?;
         }
         fs::write(
-            Path::new(AppConfig::FILE_NAME),
+            config_dir.join(Path::new(AppConfig::FILE_NAME)),
             serde_yaml::to_string(&self.application_config).unwrap_or_default(),
         )?;
         fs::write(
-            Path::new(DisplayConfig::FILE_NAME),
+            config_dir.join(Path::new(DisplayConfig::FILE_NAME)),
             serde_yaml::to_string(&self.display_config).unwrap_or_default(),
         )?;
         fs::write(
-            Path::new(MemoryConfig::FILE_NAME),
+            config_dir.join(Path::new(MemoryConfig::FILE_NAME)),
             serde_yaml::to_string(&self.memory_config).unwrap_or_default(),
         )
     }
