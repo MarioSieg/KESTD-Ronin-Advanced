@@ -49,13 +49,13 @@ pub fn create(drivers: &Drivers) -> ShaderPipeline {
         strip_index_format: None,
         front_face: FrontFace::Ccw,
         cull_mode: CullMode::Back,
-        polygon_mode: PolygonMode::Fill
+        polygon_mode: PolygonMode::Fill,
     };
 
     let multi_sample_state = MultisampleState {
         count: 1,
         mask: !0,
-        alpha_to_coverage_enabled: false
+        alpha_to_coverage_enabled: false,
     };
 
     drivers.create_shader_pipeline(ShaderPipelineDescriptor {

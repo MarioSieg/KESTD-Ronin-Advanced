@@ -98,7 +98,7 @@ impl ResourceImporteur for Texture {
             extent,
         );
         let sampler = system.drivers.device.create_sampler(&SamplerDescriptor {
-            address_mode_u:AddressMode::ClampToEdge,
+            address_mode_u: AddressMode::ClampToEdge,
             address_mode_v: AddressMode::ClampToEdge,
             address_mode_w: AddressMode::ClampToEdge,
             mag_filter: FilterMode::Nearest,
@@ -114,7 +114,7 @@ impl ResourceImporteur for Texture {
             extent,
             texture,
             view,
-            sampler
+            sampler,
         })
     }
 }

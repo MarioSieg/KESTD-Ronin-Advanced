@@ -1,7 +1,7 @@
 use super::prelude::*;
 use bytemuck::{Pod, Zeroable};
-use std::io::BufReader;
 use std::fs::File;
+use std::io::BufReader;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -71,19 +71,21 @@ impl ResourceImporteur for Mesh {
 
     fn load(system: &Self::ImportSystem, path: PathBuf) -> Arc<Self> {
         use obj::{load_obj, Obj, TexturedVertex};
+        use rayon::iter::*;
         use wgpu::util::{BufferInitDescriptor, DeviceExt};
         use wgpu::*;
-        use rayon::iter::*;
 
         let input = BufReader::new(File::open(&path).unwrap());
         let mesh: Obj<TexturedVertex> = load_obj(input).unwrap();
 
-        let vertices: Vec<Vertex> = mesh.vertices.into_par_iter().map(|v: TexturedVertex| {
-            Vertex {
+        let vertices: Vec<Vertex> = mesh
+            .vertices
+            .into_par_iter()
+            .map(|v: TexturedVertex| Vertex {
                 position: [v.position[0], v.position[1], v.position[2], 1.0],
                 tex_coords: [v.texture[0], v.texture[1]],
-            }
-        }).collect();
+            })
+            .collect();
         let vertices = vertices.into_boxed_slice();
 
         let indices: Box<[Index]> = mesh.indices.into_boxed_slice();

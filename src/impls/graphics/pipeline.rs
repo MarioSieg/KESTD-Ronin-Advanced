@@ -8,7 +8,7 @@ pub struct ShaderPipeline {
     pub fs_targets: SmallVec<[ColorTargetState; 8]>,
     pub pipeline_layout: PipelineLayout,
     pub render_pipeline: RenderPipeline,
-    pub bind_group_layout: BindGroupLayout
+    pub bind_group_layout: BindGroupLayout,
 }
 
 impl ShaderPipeline {
@@ -55,7 +55,7 @@ impl ShaderPipeline {
             fs_targets,
             pipeline_layout,
             render_pipeline,
-            bind_group_layout
+            bind_group_layout,
         }
     }
 }
