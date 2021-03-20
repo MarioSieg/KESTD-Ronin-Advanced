@@ -88,6 +88,10 @@ impl WindowData {
 
         const WIN_TITLE: &str = "KESTD Ronin Advanced - Simulation";
 
+        glfw.window_hint(WindowHint::ClientApi(ClientApiHint::NoApi));
+        glfw.window_hint(WindowHint::Resizable(false));
+        glfw.window_hint(WindowHint::Visible(false));
+
         fn make_windowed(
             glfw: &mut Glfw,
             width: &mut u16,
@@ -99,9 +103,6 @@ impl WindowData {
             if *height == 0 || *height > 16384 || *height < 600 {
                 *height = 1080;
             }
-            glfw.window_hint(WindowHint::ClientApi(ClientApiHint::NoApi));
-            glfw.window_hint(WindowHint::Resizable(false));
-            glfw.window_hint(WindowHint::Visible(false));
             if let Some(win) =
                 glfw.create_window(*width as _, *height as _, WIN_TITLE, WindowMode::Windowed)
             {
