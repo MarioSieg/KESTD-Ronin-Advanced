@@ -29,7 +29,7 @@ impl System for GraphicsSystem {
     }
 
     fn tick(&mut self) -> bool {
-        let mesh = Mesh::load(self, PathBuf::from("")).unwrap();
+        let mesh = Mesh::load(self, PathBuf::from(""));
 
         let mut frame = self.drivers.begin_frame();
         {

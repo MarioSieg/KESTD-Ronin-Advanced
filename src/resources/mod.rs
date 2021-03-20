@@ -1,4 +1,5 @@
 pub mod mesh;
+pub mod texture;
 
 use super::systems::System;
 use std::path::PathBuf;
@@ -9,7 +10,7 @@ pub trait ResourceImporteur {
 
     fn path(&self) -> &PathBuf;
 
-    fn load(_system: &Self::ImportSystem, _path: PathBuf) -> Option<Arc<Self>>;
+    fn load(_system: &Self::ImportSystem, _path: PathBuf) -> Arc<Self>;
 }
 
 mod prelude {

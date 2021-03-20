@@ -31,21 +31,43 @@ pub type Index = u16;
 
 pub struct Mesh {
     path: PathBuf,
-    vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
     indices: Box<[Index]>,
     vertices: Box<[Vertex]>,
+    vertex_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
+}
+
+impl Mesh {
+    #[inline]
+    pub fn vertex_buffer(&self) -> &wgpu::Buffer {
+        &self.vertex_buffer
+    }
+
+    #[inline]
+    pub fn index_buffer(&self) -> &wgpu::Buffer {
+        &self.index_buffer
+    }
+
+    #[inline]
+    pub fn indices(&self) -> &[Index] {
+        &self.indices
+    }
+
+    #[inline]
+    pub fn vertices(&self) -> &[Vertex] {
+        &self.vertices
+    }
 }
 
 impl ResourceImporteur for Mesh {
-    type ImportSystem = crate::systems::graphics::GraphicsSystem;
+    type ImportSystem = graphics::GraphicsSystem;
 
     #[inline]
     fn path(&self) -> &PathBuf {
         &self.path
     }
 
-    fn load(system: &Self::ImportSystem, path: PathBuf) -> Option<Arc<Self>> {
+    fn load(system: &Self::ImportSystem, path: PathBuf) -> Arc<Self> {
         use wgpu::util::{BufferInitDescriptor, DeviceExt};
         use wgpu::*;
 
@@ -70,35 +92,13 @@ impl ResourceImporteur for Mesh {
                 usage: BufferUsage::INDEX,
             });
 
-        Some(Arc::new(Self {
+        Arc::new(Self {
             path,
-            vertex_buffer,
-            index_buffer,
             indices,
             vertices,
-        }))
-    }
-}
-
-impl Mesh {
-    #[inline]
-    pub fn vertex_buffer(&self) -> &wgpu::Buffer {
-        &self.vertex_buffer
-    }
-
-    #[inline]
-    pub fn index_buffer(&self) -> &wgpu::Buffer {
-        &self.index_buffer
-    }
-
-    #[inline]
-    pub fn indices(&self) -> &[Index] {
-        &self.indices
-    }
-
-    #[inline]
-    pub fn vertices(&self) -> &[Vertex] {
-        &self.vertices
+            vertex_buffer,
+            index_buffer,
+        })
     }
 }
 
@@ -143,24 +143,3 @@ pub const CUBE_INDICES: [u16; 36] = [
     16, 17, 18, 18, 19, 16, // front
     20, 21, 22, 22, 23, 20, // back
 ];
-
-fn create_texels(size: usize) -> Vec<u8> {
-    (0..size * size)
-        .flat_map(|id| {
-            // get high five for recognizing this ;)
-            let cx = 3.0 * (id % size) as f32 / (size - 1) as f32 - 2.0;
-            let cy = 2.0 * (id / size) as f32 / (size - 1) as f32 - 1.0;
-            let (mut x, mut y, mut count) = (cx, cy, 0);
-            while count < 0xFF && x * x + y * y < 4.0 {
-                let old_x = x;
-                x = x * x - y * y + cx;
-                y = 2.0 * old_x * y + cy;
-                count += 1;
-            }
-            std::iter::once(0xFF - (count * 5) as u8)
-                .chain(std::iter::once(0xFF - (count * 15) as u8))
-                .chain(std::iter::once(0xFF - (count * 50) as u8))
-                .chain(std::iter::once(1))
-        })
-        .collect()
-}
