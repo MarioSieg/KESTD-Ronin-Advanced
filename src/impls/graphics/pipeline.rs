@@ -8,7 +8,7 @@ pub struct ShaderPipeline {
     pub fs_targets: SmallVec<[ColorTargetState; 8]>,
     pub pipeline_layout: PipelineLayout,
     pub render_pipeline: RenderPipeline,
-    pub bind_group: BindGroup,
+    pub bind_group_layout: BindGroupLayout
 }
 
 impl ShaderPipeline {
@@ -49,20 +49,13 @@ impl ShaderPipeline {
                 depth_stencil: desc.depth_stencil,
                 multisample: desc.multi_sample,
             });
-        let bind_group = drivers
-            .device
-            .create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &bind_group_layout,
-                entries: &[],
-                label: None,
-            });
         Self {
             vs_module,
             fs_module,
             fs_targets,
             pipeline_layout,
             render_pipeline,
-            bind_group,
+            bind_group_layout
         }
     }
 }

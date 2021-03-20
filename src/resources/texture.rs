@@ -10,6 +10,7 @@ pub struct Texture {
     extent: wgpu::Extent3d,
     texture: wgpu::Texture,
     view: wgpu::TextureView,
+    sampler: wgpu::Sampler,
 }
 
 impl Texture {
@@ -42,6 +43,11 @@ impl Texture {
     pub fn view(&self) -> &wgpu::TextureView {
         &self.view
     }
+
+    #[inline]
+    pub fn sampler(&self) -> &wgpu::Sampler {
+        &self.sampler
+    }
 }
 
 impl ResourceImporteur for Texture {
@@ -72,12 +78,12 @@ impl ResourceImporteur for Texture {
             format: TextureFormat::Rgba8UnormSrgb,
             usage: TextureUsage::SAMPLED | TextureUsage::COPY_DST,
         });
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = texture.create_view(&TextureViewDescriptor::default());
         system.drivers.queue.write_texture(
             TextureCopyView {
                 texture: &texture,
                 mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
+                origin: Origin3d::ZERO,
             },
             &texels,
             TextureDataLayout {
@@ -87,6 +93,15 @@ impl ResourceImporteur for Texture {
             },
             extent,
         );
+        let sampler = system.drivers.device.create_sampler(&SamplerDescriptor {
+            address_mode_u:AddressMode::ClampToEdge,
+            address_mode_v: AddressMode::ClampToEdge,
+            address_mode_w: AddressMode::ClampToEdge,
+            mag_filter: FilterMode::Nearest,
+            min_filter: FilterMode::Linear,
+            mipmap_filter: FilterMode::Nearest,
+            ..Default::default()
+        });
         Arc::new(Self {
             path,
             width,
@@ -95,6 +110,7 @@ impl ResourceImporteur for Texture {
             extent,
             texture,
             view,
+            sampler
         })
     }
 }
