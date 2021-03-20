@@ -48,7 +48,7 @@ impl System for GraphicsSystem {
             texture: None
         };
 
-        let mesh = Mesh::load(&this, PathBuf::from(""));
+        let mesh = Mesh::load(&this, PathBuf::from("db/meshes/cube.obj"));
         let texture = Texture::load(&this, PathBuf::from("db/textures/grid.png"));
 
         let bind_group = this.drivers.device.create_bind_group(&wgpu::BindGroupDescriptor {
