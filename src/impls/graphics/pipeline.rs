@@ -47,7 +47,7 @@ impl ShaderPipeline {
                 }),
                 primitive: desc.primitive_state,
                 depth_stencil: desc.depth_stencil,
-                multisample: desc.multi_sample,
+                multisample: desc.multi_sample_state,
             });
         Self {
             vs_module,
@@ -66,7 +66,7 @@ pub struct ShaderPipelineDescriptor<'a> {
     pub push_constant_ranges: &'a [PushConstantRange],
     pub primitive_state: PrimitiveState,
     pub depth_stencil: Option<DepthStencilState>,
-    pub multi_sample: MultisampleState,
+    pub multi_sample_state: MultisampleState,
     pub vertex_layouts: &'a [VertexBufferLayout<'a>],
 }
 

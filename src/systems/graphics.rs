@@ -49,7 +49,7 @@ impl System for GraphicsSystem {
         };
 
         let mesh = Mesh::load(&this, PathBuf::from(""));
-        let texture = Texture::load(&this, PathBuf::from(""));
+        let texture = Texture::load(&this, PathBuf::from("db/textures/grid.png"));
 
         let bind_group = this.drivers.device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &this.lambert_pipeline.bind_group_layout,

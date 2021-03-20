@@ -1,4 +1,5 @@
 use super::prelude::*;
+use image::GenericImageView;
 
 pub type Texel = u8;
 
@@ -59,11 +60,14 @@ impl ResourceImporteur for Texture {
     }
 
     fn load(system: &Self::ImportSystem, path: PathBuf) -> Arc<Self> {
+        use image::io::Reader as ImageReader;
         use wgpu::*;
 
-        let width: u16 = 256;
-        let height: u16 = 256;
-        let texels = create_texels(width as _).into_boxed_slice();
+        let image = ImageReader::open(&path).unwrap().decode().unwrap();
+        let width = image.width() as u16;
+        let height = image.height() as u16;
+        let texels = image.into_bytes().into_boxed_slice();
+
         let extent = Extent3d {
             width: width as u32,
             height: height as u32,
@@ -113,25 +117,4 @@ impl ResourceImporteur for Texture {
             sampler
         })
     }
-}
-
-fn create_texels(size: usize) -> Vec<u8> {
-    (0..size * size)
-        .flat_map(|id| {
-            // get high five for recognizing this ;)
-            let cx = 3.0 * (id % size) as f32 / (size - 1) as f32 - 2.0;
-            let cy = 2.0 * (id / size) as f32 / (size - 1) as f32 - 1.0;
-            let (mut x, mut y, mut count) = (cx, cy, 0);
-            while count < 0xFF && x * x + y * y < 4.0 {
-                let old_x = x;
-                x = x * x - y * y + cx;
-                y = 2.0 * old_x * y + cy;
-                count += 1;
-            }
-            std::iter::once(0xFF - (count * 5) as u8)
-                .chain(std::iter::once(0xFF - (count * 15) as u8))
-                .chain(std::iter::once(0xFF - (count * 50) as u8))
-                .chain(std::iter::once(1))
-        })
-        .collect()
 }

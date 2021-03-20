@@ -44,13 +44,27 @@ pub fn create(drivers: &Drivers) -> ShaderPipeline {
         ],
     };
 
+    let primitive_state = PrimitiveState {
+        topology: PrimitiveTopology::TriangleList,
+        strip_index_format: None,
+        front_face: FrontFace::Ccw,
+        cull_mode: CullMode::Back,
+        polygon_mode: PolygonMode::Fill
+    };
+
+    let multi_sample_state = MultisampleState {
+        count: 1,
+        mask: !0,
+        alpha_to_coverage_enabled: false
+    };
+
     drivers.create_shader_pipeline(ShaderPipelineDescriptor {
         modules: load_shader!("lambert"),
         bind_group_layouts: &bind_group_layout,
         push_constant_ranges: &[],
-        primitive_state: PrimitiveState::default(),
+        primitive_state,
         depth_stencil: None,
-        multi_sample: MultisampleState::default(),
+        multi_sample_state,
         vertex_layouts: &[buffer_layout],
     })
 }
