@@ -1,5 +1,4 @@
 use super::prelude::*;
-use crate::impls::graphics::matrix::generate_matrix;
 use crate::impls::graphics::prelude::*;
 use crate::impls::platform::prelude::WindowHandle;
 use crate::resources::mesh::Mesh;
@@ -9,13 +8,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use wgpu::IndexFormat;
 
-use wgpu::util::DeviceExt;
-
 pub struct GraphicsSystem {
     pub drivers: Drivers,
-    pub lambert_pipeline: ShaderPipeline,
+    pub lambert_pipeline: LambertPipeline,
 
-    pub matrix_buffer: wgpu::Buffer,
     pub bind_group: Option<wgpu::BindGroup>,
     mesh: Option<Arc<Mesh>>,
     texture: Option<Arc<Texture>>,
@@ -30,24 +26,11 @@ impl System for GraphicsSystem {
 
         let drivers = Drivers::initialize(window, is_power_safe_mode, use_vsync);
 
-        let lambert_pipeline = pipelines::lambert::create(&drivers);
-
-        let mx_total = generate_matrix(
-            drivers.swap_chain_desc.width as f32 / drivers.swap_chain_desc.height as f32,
-        );
-        let mx_ref: &[f32; 16] = mx_total.as_ref();
-        let matrix_buffer = drivers
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: None,
-                contents: bytemuck::cast_slice(mx_ref),
-                usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-            });
+        let lambert_pipeline = LambertPipeline::create(&drivers);
 
         let mut this = Self {
             drivers,
             lambert_pipeline,
-            matrix_buffer,
             bind_group: None,
             mesh: None,
             texture: None,
@@ -60,11 +43,14 @@ impl System for GraphicsSystem {
             .drivers
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &this.lambert_pipeline.bind_group_layout,
+                layout: &this.lambert_pipeline.shader_pipeline.bind_group_layout,
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: this.matrix_buffer.as_entire_binding(),
+                        resource: this
+                            .lambert_pipeline
+                            .view_projection_buffer
+                            .as_entire_binding(),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
@@ -89,7 +75,7 @@ impl System for GraphicsSystem {
         let mut frame = self.drivers.begin_frame();
         {
             let mut pass = frame.create_pass();
-            pass.set_pipeline(&self.lambert_pipeline.render_pipeline);
+            pass.set_pipeline(&self.lambert_pipeline.shader_pipeline.render_pipeline);
             pass.set_bind_group(0, self.bind_group.as_ref().unwrap(), &[]);
             pass.set_index_buffer(
                 self.mesh.as_ref().unwrap().index_buffer().slice(..),
