@@ -1,5 +1,6 @@
 use super::config::CoreConfig;
 use super::systems::SystemSupervisor;
+use crate::ecs::{self, World, WorldExt};
 use humantime::Duration;
 use log::*;
 use std::io::Write;
@@ -9,6 +10,7 @@ use std::time::Instant;
 pub struct Engine {
     pub config: CoreConfig,
     pub systems: SystemSupervisor,
+    pub world: World,
 }
 
 impl Engine {
@@ -91,11 +93,20 @@ impl Engine {
         Self::install_panic_hook();
         let clock = Instant::now();
         let _ = Self::create_logger();
+
         info!("Initializing KESTD Ronin simulation system...");
         info!("PID: {}", process::id());
+
         let mut config = CoreConfig::load();
         let systems = SystemSupervisor::initialize(&mut config);
-        let this = Self { config, systems };
+        let mut world = World::new();
+        ecs::components::register_all(&mut world);
+        let this = Self {
+            config,
+            systems,
+            world,
+        };
+
         info!(
             "System online! Boot time: {}",
             Duration::from(clock.elapsed())

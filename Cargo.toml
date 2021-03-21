@@ -42,3 +42,5 @@ raw-window-handle = "0.3.3"
 bytemuck = "1.5.1"
 image = "0.23.14"
 obj-rs = "0.6.2"
+specs = { version = "0.16.1", features = ["parallel", "serde"] }
+specs-derive = "0.4.1"
