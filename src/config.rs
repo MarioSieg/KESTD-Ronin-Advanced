@@ -90,6 +90,33 @@ pub struct CoreConfig {
     pub display_config: DisplayConfig,
 }
 
+macro_rules! deserialize_config {
+    ($dir:ident, $type:ty) => {
+    serde_yaml::from_str::<$type>(
+            &fs::read_to_string($dir.join(Path::new(<$type>::FILE_NAME)))
+                .unwrap_or_default(),
+        )
+        .unwrap_or_else(|_| {
+            warn!(
+                "Failed to load: \"{}\"! Setting default values...",
+                <$type>::FILE_NAME
+            );
+            warn!("Trying autofix by removing config files! Clean config files will be recreated when rebooting the engine!");
+            let _ = fs::remove_dir_all(&$dir);
+            std::default::Default::default()
+        })
+    };
+}
+
+macro_rules! serialize_config {
+    ($dir:ident, $self:ident, $data:ident, $type:ty) => {
+        fs::write(
+            $dir.join(Path::new(<$type>::FILE_NAME)),
+            serde_yaml::to_string(&$self.$data).unwrap_or_default(),
+        )
+    };
+}
+
 impl CoreConfig {
     pub fn load() -> Self {
         let config_dir = PathBuf::from(CONFIG_DIR);
@@ -100,39 +127,9 @@ impl CoreConfig {
             let _ = this.save();
             return this;
         }
-        let application_config = serde_yaml::from_str::<AppConfig>(
-            &fs::read_to_string(config_dir.join(Path::new(AppConfig::FILE_NAME)))
-                .unwrap_or_default(),
-        )
-        .unwrap_or_else(|_| {
-            warn!(
-                "Failed to load: \"{}\"! Setting default values...",
-                AppConfig::FILE_NAME
-            );
-            std::default::Default::default()
-        });
-        let memory_config = serde_yaml::from_str::<MemoryConfig>(
-            &fs::read_to_string(config_dir.join(Path::new(MemoryConfig::FILE_NAME)))
-                .unwrap_or_default(),
-        )
-        .unwrap_or_else(|_| {
-            warn!(
-                "Failed to load: \"{}\"! Setting default values...",
-                MemoryConfig::FILE_NAME
-            );
-            std::default::Default::default()
-        });
-        let display_config = serde_yaml::from_str::<DisplayConfig>(
-            &fs::read_to_string(config_dir.join(Path::new(DisplayConfig::FILE_NAME)))
-                .unwrap_or_default(),
-        )
-        .unwrap_or_else(|_| {
-            warn!(
-                "Failed to load: \"{}\"! Setting default values...",
-                DisplayConfig::FILE_NAME
-            );
-            std::default::Default::default()
-        });
+        let application_config = deserialize_config!(config_dir, AppConfig);
+        let memory_config = deserialize_config!(config_dir, MemoryConfig);
+        let display_config = deserialize_config!(config_dir, DisplayConfig);
         Self {
             application_config,
             memory_config,
@@ -145,17 +142,8 @@ impl CoreConfig {
         if !config_dir.exists() {
             fs::create_dir(config_dir)?;
         }
-        fs::write(
-            config_dir.join(Path::new(AppConfig::FILE_NAME)),
-            serde_yaml::to_string(&self.application_config).unwrap_or_default(),
-        )?;
-        fs::write(
-            config_dir.join(Path::new(DisplayConfig::FILE_NAME)),
-            serde_yaml::to_string(&self.display_config).unwrap_or_default(),
-        )?;
-        fs::write(
-            config_dir.join(Path::new(MemoryConfig::FILE_NAME)),
-            serde_yaml::to_string(&self.memory_config).unwrap_or_default(),
-        )
+        serialize_config!(config_dir, self, application_config, AppConfig)?;
+        serialize_config!(config_dir, self, memory_config, MemoryConfig)?;
+        serialize_config!(config_dir, self, display_config, DisplayConfig)
     }
 }
