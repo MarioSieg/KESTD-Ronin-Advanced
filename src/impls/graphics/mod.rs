@@ -1,9 +1,11 @@
 pub mod matrix;
+pub mod pass;
 pub mod pipeline;
 pub mod pipelines;
 pub mod prelude;
 
 use log::info;
+use pass::Pass;
 use pipeline::{ShaderPipeline, ShaderPipelineDescriptor};
 use wgpu::*;
 
@@ -25,8 +27,8 @@ pub struct Frame<'a> {
 }
 
 impl<'a> Frame<'a> {
-    pub fn create_pass(&mut self) -> RenderPass {
-        self.encoder.begin_render_pass(&RenderPassDescriptor {
+    pub fn create_pass(&mut self) -> Pass {
+        let render_pass = self.encoder.begin_render_pass(&RenderPassDescriptor {
             label: None,
             color_attachments: &[RenderPassColorAttachmentDescriptor {
                 attachment: &self.view.view,
@@ -37,7 +39,8 @@ impl<'a> Frame<'a> {
                 },
             }],
             depth_stencil_attachment: None,
-        })
+        });
+        Pass(render_pass)
     }
 
     pub fn end(self) {

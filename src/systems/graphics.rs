@@ -6,7 +6,6 @@ use crate::resources::texture::Texture;
 use crate::resources::ResourceImporteur;
 use std::path::PathBuf;
 use std::sync::Arc;
-use wgpu::IndexFormat;
 
 pub struct GraphicsSystem {
     pub drivers: Drivers,
@@ -75,18 +74,9 @@ impl System for GraphicsSystem {
         let mut frame = self.drivers.begin_frame();
         {
             let mut pass = frame.create_pass();
-            pass.set_pipeline(&self.lambert_pipeline.shader_pipeline.render_pipeline);
-            pass.set_bind_group(0, self.bind_group.as_ref().unwrap(), &[]);
-            pass.set_index_buffer(
-                self.mesh.as_ref().unwrap().index_buffer().slice(..),
-                IndexFormat::Uint16,
-            );
-            pass.set_vertex_buffer(0, self.mesh.as_ref().unwrap().vertex_buffer().slice(..));
-            pass.draw_indexed(
-                0..self.mesh.as_ref().unwrap().indices().len() as u32,
-                0,
-                0..1,
-            )
+            pass.set_pipeline(&self.lambert_pipeline.shader_pipeline);
+            pass.set_bind_group(0, self.bind_group.as_ref().unwrap());
+            pass.draw_indexed(self.mesh.as_ref().unwrap());
         }
 
         frame.end();
