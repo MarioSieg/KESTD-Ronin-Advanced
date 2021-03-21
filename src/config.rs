@@ -120,7 +120,10 @@ macro_rules! serialize_config {
 impl CoreConfig {
     pub fn load() -> Self {
         let config_dir = PathBuf::from(CONFIG_DIR);
-        info!("Parsing config from dir: {:?}", config_dir);
+        info!(
+            "Parsing config from dir: {:?}",
+            fs::canonicalize(&config_dir).unwrap_or_default()
+        );
         if !config_dir.exists() {
             warn!("Config directory does not exist! Creating config...");
             let this = Self::default();

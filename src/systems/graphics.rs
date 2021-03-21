@@ -10,13 +10,12 @@ use std::path::PathBuf;
 pub struct GraphicsSystem {
     pub drivers: Drivers,
     pub lambert_pipeline: LambertPipeline,
-
     pub bind_group: Option<wgpu::BindGroup>,
 
     renderer: Option<MeshRenderer>,
 }
 
-impl System for GraphicsSystem {
+impl SubSystem for GraphicsSystem {
     type Args = WindowHandle;
 
     fn initialize(cfg: &mut CoreConfig, window: &Self::Args) -> Self {

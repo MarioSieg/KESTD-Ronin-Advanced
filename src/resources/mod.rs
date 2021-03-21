@@ -2,12 +2,12 @@ pub mod material;
 pub mod mesh;
 pub mod texture;
 
-use super::systems::System;
+use super::systems::SubSystem;
 use std::path::PathBuf;
 use std::sync::Arc;
 
 pub trait ResourceImporteur {
-    type ImportSystem: System;
+    type ImportSystem: SubSystem;
 
     fn path(&self) -> &PathBuf;
 
