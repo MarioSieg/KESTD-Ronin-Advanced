@@ -1,4 +1,4 @@
-use super::pipeline::ShaderPipeline;
+use super::pipeline::Pipeline;
 use crate::resources::mesh::Mesh;
 use std::sync::Arc;
 use wgpu::*;
@@ -7,8 +7,8 @@ pub struct Pass<'a>(pub RenderPass<'a>);
 
 impl<'a> Pass<'a> {
     #[inline]
-    pub fn set_pipeline(&mut self, pipe: &'a ShaderPipeline) {
-        self.0.set_pipeline(&pipe.render_pipeline);
+    pub fn set_pipeline<T: Pipeline>(&mut self, pipe: &'a T) {
+        self.0.set_pipeline(&pipe.shader_pipeline().render_pipeline);
     }
 
     #[inline]

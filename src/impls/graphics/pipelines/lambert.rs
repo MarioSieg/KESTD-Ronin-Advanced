@@ -9,8 +9,16 @@ pub struct LambertPipeline {
     pub view_projection_buffer: Buffer,
 }
 
-impl LambertPipeline {
-    pub fn create(drivers: &Drivers) -> Self {
+impl Pipeline for LambertPipeline {
+    const NAME: &'static str = "Lambert";
+    const IS_SURFACE_PIPELINE: bool = true;
+
+    #[inline]
+    fn shader_pipeline(&self) -> &ShaderPipeline {
+        &self.shader_pipeline
+    }
+
+    fn create(drivers: &Drivers) -> Self {
         let bind_group_layout = [
             BindGroupLayoutEntry {
                 binding: 0,

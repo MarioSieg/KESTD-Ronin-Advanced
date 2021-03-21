@@ -72,6 +72,14 @@ pub struct ShaderPipelineDescriptor<'a> {
 
 pub const SHADER_ENTRY: &str = "main";
 
+pub trait Pipeline {
+    const NAME: &'static str;
+    const IS_SURFACE_PIPELINE: bool;
+
+    fn shader_pipeline(&self) -> &ShaderPipeline;
+    fn create(drivers: &Drivers) -> Self;
+}
+
 #[macro_export]
 macro_rules! load_shader {
     ($name:literal) => {

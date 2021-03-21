@@ -74,7 +74,7 @@ impl System for GraphicsSystem {
         let mut frame = self.drivers.begin_frame();
         {
             let mut pass = frame.create_pass();
-            pass.set_pipeline(&self.lambert_pipeline.shader_pipeline);
+            pass.set_pipeline(&self.lambert_pipeline);
             pass.set_bind_group(0, self.bind_group.as_ref().unwrap());
             pass.draw_indexed(self.mesh.as_ref().unwrap());
         }
