@@ -78,7 +78,9 @@ impl Pipeline for LambertPipeline {
         let mx_total = generate_matrix(
             drivers.swap_chain_desc.width as f32 / drivers.swap_chain_desc.height as f32,
         );
+
         let mx_ref: &[f32; 16] = mx_total.as_ref();
+
         let view_projection_buffer = drivers.device.create_buffer_init(&BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(mx_ref),
@@ -91,8 +93,6 @@ impl Pipeline for LambertPipeline {
         }][..];
 
         let shader_pipeline = drivers.create_shader_pipeline::<Self>(ShaderPipelineDescriptor {
-            modules: load_shader!("lambert"),
-            push_constant_ranges: &[],
             depth_stencil: None,
             multi_sample_state,
             internal_bind_group_entries,

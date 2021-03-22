@@ -28,8 +28,6 @@ pub struct ShaderPipeline {
 }
 
 pub struct ShaderPipelineDescriptor<'a> {
-    pub modules: &'a (ShaderModuleDescriptor<'a>, ShaderModuleDescriptor<'a>),
-    pub push_constant_ranges: &'a [PushConstantRange],
     pub depth_stencil: Option<DepthStencilState>,
     pub multi_sample_state: MultisampleState,
     pub internal_bind_group_entries: &'a [BindGroupEntry<'a>],
@@ -40,8 +38,33 @@ impl ShaderPipeline {
         drivers: &Drivers,
         desc: ShaderPipelineDescriptor,
     ) -> Self {
-        let vs_module = drivers.device.create_shader_module(&desc.modules.0);
-        let fs_module = drivers.device.create_shader_module(&desc.modules.1);
+        let name = String::from(T::NAME).to_lowercase();
+
+        let vs_bytecode_path = format!("db/shaders/fixed_pipelines/{}/final/shader.vert.spv", name);
+        let fs_bytecode_path = format!("db/shaders/fixed_pipelines/{}/final/shader.frag.spv", name);
+
+        let vs_bytecode = std::fs::read(&vs_bytecode_path).expect(&format!(
+            "Failed to load vertex shader: {:?}",
+            vs_bytecode_path
+        ));
+        let fs_bytecode = std::fs::read(&fs_bytecode_path).expect(&format!(
+            "Failed to fragment shader: {:?}",
+            fs_bytecode_path
+        ));
+
+        let vs_module_desc = ShaderModuleDescriptor {
+            label: None,
+            source: util::make_spirv(&vs_bytecode[..]),
+            flags: ShaderFlags::VALIDATION,
+        };
+        let fs_module_desc = ShaderModuleDescriptor {
+            label: None,
+            source: util::make_spirv(&fs_bytecode[..]),
+            flags: ShaderFlags::VALIDATION,
+        };
+
+        let vs_module = drivers.device.create_shader_module(&vs_module_desc);
+        let fs_module = drivers.device.create_shader_module(&fs_module_desc);
         let fs_targets = smallvec![drivers.swap_chain_format.into()];
 
         let internal_bind_group_layout =
@@ -71,7 +94,7 @@ impl ShaderPipeline {
             .create_pipeline_layout(&PipelineLayoutDescriptor {
                 label: None,
                 bind_group_layouts: &[&internal_bind_group_layout, &material_bind_group_layout][..],
-                push_constant_ranges: desc.push_constant_ranges,
+                push_constant_ranges: &[],
             });
 
         let render_pipeline = drivers
@@ -108,21 +131,3 @@ impl ShaderPipeline {
 }
 
 pub const SHADER_ENTRY: &str = "main";
-
-#[macro_export]
-macro_rules! load_shader {
-    ($name:literal) => {
-        &(
-            wgpu::include_spirv!(concat!(
-                "../../../../db/shaders/fixed_pipelines/",
-                $name,
-                "/final/shader.vert.spv"
-            )),
-            wgpu::include_spirv!(concat!(
-                "../../../../db/shaders/fixed_pipelines/",
-                $name,
-                "/final/shader.frag.spv"
-            )),
-        )
-    };
-}
