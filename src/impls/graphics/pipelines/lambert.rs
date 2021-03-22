@@ -46,29 +46,29 @@ impl Pipeline for LambertPipeline {
         },
     ];
 
+    const PRIMITIVE_STATE: PrimitiveState = PrimitiveState {
+        topology: PrimitiveTopology::TriangleList,
+        strip_index_format: None,
+        front_face: FrontFace::Ccw,
+        cull_mode: CullMode::Back,
+        polygon_mode: PolygonMode::Fill,
+    };
+
+    const VERTEX_BUFFER_LAYOUTS: &'static [VertexBufferLayout<'static>] = &[VertexBufferLayout {
+        array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+        step_mode: wgpu::InputStepMode::Vertex,
+        attributes: &vertex_attr_array![
+            0 => Float4,
+            1 => Float2
+        ],
+    }];
+
     #[inline]
     fn shader_pipeline(&self) -> &ShaderPipeline {
         &self.shader_pipeline
     }
 
     fn create(drivers: &Drivers) -> Self {
-        let buffer_layout = VertexBufferLayout {
-            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::InputStepMode::Vertex,
-            attributes: &vertex_attr_array![
-                0 => Float4,
-                1 => Float2
-            ],
-        };
-
-        let primitive_state = PrimitiveState {
-            topology: PrimitiveTopology::TriangleList,
-            strip_index_format: None,
-            front_face: FrontFace::Ccw,
-            cull_mode: CullMode::Back,
-            polygon_mode: PolygonMode::Fill,
-        };
-
         let multi_sample_state = MultisampleState {
             count: 1,
             mask: !0,
@@ -93,10 +93,8 @@ impl Pipeline for LambertPipeline {
         let shader_pipeline = drivers.create_shader_pipeline::<Self>(ShaderPipelineDescriptor {
             modules: load_shader!("lambert"),
             push_constant_ranges: &[],
-            primitive_state,
             depth_stencil: None,
             multi_sample_state,
-            vertex_layouts: &[buffer_layout],
             internal_bind_group_entries,
         });
 

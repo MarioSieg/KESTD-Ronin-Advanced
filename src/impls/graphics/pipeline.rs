@@ -7,6 +7,8 @@ pub trait Pipeline {
     const IS_SURFACE_PIPELINE: bool;
     const INTERNAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry];
     const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry];
+    const PRIMITIVE_STATE: PrimitiveState;
+    const VERTEX_BUFFER_LAYOUTS: &'static [VertexBufferLayout<'static>];
 
     fn shader_pipeline(&self) -> &ShaderPipeline;
     fn create(drivers: &Drivers) -> Self;
@@ -28,10 +30,8 @@ pub struct ShaderPipeline {
 pub struct ShaderPipelineDescriptor<'a> {
     pub modules: &'a (ShaderModuleDescriptor<'a>, ShaderModuleDescriptor<'a>),
     pub push_constant_ranges: &'a [PushConstantRange],
-    pub primitive_state: PrimitiveState,
     pub depth_stencil: Option<DepthStencilState>,
     pub multi_sample_state: MultisampleState,
-    pub vertex_layouts: &'a [VertexBufferLayout<'a>],
     pub internal_bind_group_entries: &'a [BindGroupEntry<'a>],
 }
 
@@ -82,14 +82,14 @@ impl ShaderPipeline {
                 vertex: VertexState {
                     module: &vs_module,
                     entry_point: SHADER_ENTRY,
-                    buffers: desc.vertex_layouts,
+                    buffers: T::VERTEX_BUFFER_LAYOUTS,
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
                     entry_point: SHADER_ENTRY,
                     targets: &fs_targets[..],
                 }),
-                primitive: desc.primitive_state,
+                primitive: T::PRIMITIVE_STATE,
                 depth_stencil: desc.depth_stencil,
                 multisample: desc.multi_sample_state,
             });
