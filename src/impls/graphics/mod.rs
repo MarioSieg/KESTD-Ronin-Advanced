@@ -4,6 +4,7 @@ pub mod pipeline;
 pub mod pipelines;
 pub mod prelude;
 
+use crate::impls::graphics::prelude::Pipeline;
 use log::info;
 use pass::Pass;
 use pipeline::{ShaderPipeline, ShaderPipelineDescriptor};
@@ -49,8 +50,11 @@ impl<'a> Frame<'a> {
 }
 
 impl Drivers {
-    pub fn create_shader_pipeline(&self, desc: ShaderPipelineDescriptor) -> ShaderPipeline {
-        ShaderPipeline::create_shader_bundle(self, desc)
+    pub fn create_shader_pipeline<T: Pipeline>(
+        &self,
+        desc: ShaderPipelineDescriptor,
+    ) -> ShaderPipeline {
+        ShaderPipeline::create_shader_bundle::<T>(self, desc)
     }
 
     pub fn begin_frame(&self) -> Frame {

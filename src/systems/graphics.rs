@@ -42,7 +42,10 @@ impl SubSystem for GraphicsSystem {
             .drivers
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &this.lambert_pipeline.shader_pipeline.public_bind_group_layout,
+                layout: &this
+                    .lambert_pipeline
+                    .shader_pipeline
+                    .material_bind_group_layout,
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
@@ -70,7 +73,10 @@ impl SubSystem for GraphicsSystem {
         {
             let mut pass = frame.create_pass();
             pass.set_pipeline(&self.lambert_pipeline);
-            pass.set_bind_group(0, &self.lambert_pipeline.shader_pipeline.internal_bind_group);
+            pass.set_bind_group(
+                0,
+                &self.lambert_pipeline.shader_pipeline.internal_bind_group,
+            );
             pass.set_bind_group(1, self.bind_group.as_ref().unwrap());
             pass.draw_indexed(&self.renderer.as_ref().unwrap().mesh);
         }
