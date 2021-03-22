@@ -52,7 +52,7 @@ impl Default for MemoryConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum WindowMode {
     FullScreen,
     Windowed,
@@ -83,11 +83,37 @@ impl Default for DisplayConfig {
     }
 }
 
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+pub enum MsaaMode {
+    Off = 1,
+    X2 = 2,
+    X4 = 4,
+    X8 = 8,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GraphicsConfig {
+    pub msaa_mode: MsaaMode,
+}
+
+impl GraphicsConfig {
+    pub const FILE_NAME: &'static str = "graphics.ini";
+}
+
+impl Default for GraphicsConfig {
+    fn default() -> Self {
+        Self {
+            msaa_mode: MsaaMode::X8,
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct CoreConfig {
     pub application_config: AppConfig,
     pub memory_config: MemoryConfig,
     pub display_config: DisplayConfig,
+    pub graphics_config: GraphicsConfig,
 }
 
 macro_rules! deserialize_config {
@@ -133,10 +159,12 @@ impl CoreConfig {
         let application_config = deserialize_config!(config_dir, AppConfig);
         let memory_config = deserialize_config!(config_dir, MemoryConfig);
         let display_config = deserialize_config!(config_dir, DisplayConfig);
+        let graphics_config = deserialize_config!(config_dir, GraphicsConfig);
         Self {
             application_config,
             memory_config,
             display_config,
+            graphics_config,
         }
     }
 
@@ -147,6 +175,7 @@ impl CoreConfig {
         }
         serialize_config!(config_dir, self, application_config, AppConfig)?;
         serialize_config!(config_dir, self, memory_config, MemoryConfig)?;
-        serialize_config!(config_dir, self, display_config, DisplayConfig)
+        serialize_config!(config_dir, self, display_config, DisplayConfig)?;
+        serialize_config!(config_dir, self, graphics_config, GraphicsConfig)
     }
 }

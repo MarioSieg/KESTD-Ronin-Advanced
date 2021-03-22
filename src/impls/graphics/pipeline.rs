@@ -1,4 +1,5 @@
 use super::Drivers;
+use crate::config::CoreConfig;
 use smallvec::{smallvec, SmallVec};
 use wgpu::*;
 
@@ -11,7 +12,7 @@ pub trait Pipeline {
     const VERTEX_BUFFER_LAYOUTS: &'static [VertexBufferLayout<'static>];
 
     fn shader_pipeline(&self) -> &ShaderPipeline;
-    fn create(drivers: &Drivers) -> Self;
+    fn create(_drivers: &Drivers, _config: &CoreConfig) -> Self;
 }
 
 pub struct ShaderPipeline {

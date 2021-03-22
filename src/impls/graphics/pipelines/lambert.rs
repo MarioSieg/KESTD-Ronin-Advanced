@@ -68,9 +68,9 @@ impl Pipeline for LambertPipeline {
         &self.shader_pipeline
     }
 
-    fn create(drivers: &Drivers) -> Self {
+    fn create(drivers: &Drivers, config: &CoreConfig) -> Self {
         let multi_sample_state = MultisampleState {
-            count: 1,
+            count: config.graphics_config.msaa_mode as u32,
             mask: !0,
             alpha_to_coverage_enabled: false,
         };
