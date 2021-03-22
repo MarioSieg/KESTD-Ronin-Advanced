@@ -42,23 +42,16 @@ impl SubSystem for GraphicsSystem {
             .drivers
             .device
             .create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &this.lambert_pipeline.shader_pipeline.bind_group_layout,
+                layout: &this.lambert_pipeline.shader_pipeline.public_bind_group_layout,
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: this
-                            .lambert_pipeline
-                            .view_projection_buffer
-                            .as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
                         resource: wgpu::BindingResource::TextureView(
                             this.renderer.as_ref().unwrap().texture.view(),
                         ),
                     },
                     wgpu::BindGroupEntry {
-                        binding: 2,
+                        binding: 1,
                         resource: wgpu::BindingResource::Sampler(
                             this.renderer.as_ref().unwrap().texture.sampler(),
                         ),
@@ -77,7 +70,8 @@ impl SubSystem for GraphicsSystem {
         {
             let mut pass = frame.create_pass();
             pass.set_pipeline(&self.lambert_pipeline);
-            pass.set_bind_group(0, self.bind_group.as_ref().unwrap());
+            pass.set_bind_group(0, &self.lambert_pipeline.shader_pipeline.internal_bind_group);
+            pass.set_bind_group(1, self.bind_group.as_ref().unwrap());
             pass.draw_indexed(&self.renderer.as_ref().unwrap().mesh);
         }
 

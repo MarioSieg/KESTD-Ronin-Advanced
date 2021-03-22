@@ -6,7 +6,6 @@ use wgpu::*;
 
 pub struct LambertPipeline {
     pub shader_pipeline: ShaderPipeline,
-    pub view_projection_buffer: Buffer,
 }
 
 impl Pipeline for LambertPipeline {
@@ -19,38 +18,6 @@ impl Pipeline for LambertPipeline {
     }
 
     fn create(drivers: &Drivers) -> Self {
-        let bind_group_layout = [
-            BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStage::VERTEX,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: BufferSize::new(64),
-                },
-                count: None,
-            },
-            BindGroupLayoutEntry {
-                binding: 1,
-                visibility: ShaderStage::FRAGMENT,
-                ty: BindingType::Texture {
-                    multisampled: false,
-                    sample_type: TextureSampleType::Float { filterable: true },
-                    view_dimension: TextureViewDimension::D2,
-                },
-                count: None,
-            },
-            BindGroupLayoutEntry {
-                binding: 2,
-                visibility: ShaderStage::FRAGMENT,
-                ty: BindingType::Sampler {
-                    comparison: false,
-                    filtering: true,
-                },
-                count: None,
-            },
-        ];
-
         let buffer_layout = VertexBufferLayout {
             array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
             step_mode: wgpu::InputStepMode::Vertex,
@@ -74,16 +41,6 @@ impl Pipeline for LambertPipeline {
             alpha_to_coverage_enabled: false,
         };
 
-        let shader_pipeline = drivers.create_shader_pipeline(ShaderPipelineDescriptor {
-            modules: load_shader!("lambert"),
-            bind_group_layouts: &bind_group_layout,
-            push_constant_ranges: &[],
-            primitive_state,
-            depth_stencil: None,
-            multi_sample_state,
-            vertex_layouts: &[buffer_layout],
-        });
-
         let mx_total = generate_matrix(
             drivers.swap_chain_desc.width as f32 / drivers.swap_chain_desc.height as f32,
         );
@@ -94,9 +51,65 @@ impl Pipeline for LambertPipeline {
             usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         });
 
+        let internal_bind_group_layout_entries = &[
+            BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStage::VERTEX,
+                ty: BindingType::Buffer {
+                    ty: BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: BufferSize::new(64),
+                },
+                count: None,
+            },
+        ];
+
+        let internal_bind_group_entries = &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource:
+                    view_projection_buffer
+                    .as_entire_binding(),
+            },
+        ][..];
+
+        let public_bind_group_layout_entries = &[
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStage::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    multisampled: false,
+                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: ShaderStage::FRAGMENT,
+                ty: wgpu::BindingType::Sampler {
+                    comparison: false,
+                    filtering: true,
+                },
+                count: None,
+            },
+        ];
+
+
+        let shader_pipeline = drivers.create_shader_pipeline(ShaderPipelineDescriptor {
+            modules: load_shader!("lambert"),
+            push_constant_ranges: &[],
+            primitive_state,
+            depth_stencil: None,
+            multi_sample_state,
+            vertex_layouts: &[buffer_layout],
+            internal_bind_group_layout_entries,
+            internal_bind_group_entries,
+            public_bind_group_layout_entries
+        });
+
         Self {
             shader_pipeline,
-            view_projection_buffer,
         }
     }
 }
