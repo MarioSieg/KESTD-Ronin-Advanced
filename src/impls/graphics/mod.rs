@@ -104,6 +104,12 @@ impl Drivers {
             power_safe_mode,
         ));
 
+        let info = adapter.get_info();
+
+        info!("GPU: {}", info.name);
+        info!("API: {:?}", info.backend);
+        info!("Type: {:?}", info.device_type);
+
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface);
 
         let swap_chain_desc = SwapChainDescriptor {
@@ -118,15 +124,13 @@ impl Drivers {
             },
         };
 
+        info!("Swapchain descriptor:\n{:#?}", swap_chain_desc);
+        info!("MSAA samples: {:?}", msaa_samples);
+
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);
 
         let frame_buffer =
             Self::create_multisampled_framebuffer(&device, &swap_chain_desc, msaa_samples as u32);
-
-        let info = adapter.get_info();
-        info!("GPU: {}", info.name);
-        info!("API: {:?}", info.backend);
-        info!("Type: {:?}", info.device_type);
 
         Self {
             instance,
