@@ -43,14 +43,10 @@ impl ShaderPipeline {
         let vs_bytecode_path = format!("db/shaders/fixed_pipelines/{}/final/shader.vert.spv", name);
         let fs_bytecode_path = format!("db/shaders/fixed_pipelines/{}/final/shader.frag.spv", name);
 
-        let vs_bytecode = std::fs::read(&vs_bytecode_path).expect(&format!(
-            "Failed to load vertex shader: {:?}",
-            vs_bytecode_path
-        ));
-        let fs_bytecode = std::fs::read(&fs_bytecode_path).expect(&format!(
-            "Failed to fragment shader: {:?}",
-            fs_bytecode_path
-        ));
+        let vs_bytecode = std::fs::read(&vs_bytecode_path)
+            .unwrap_or_else(|_| panic!("Failed to load vertex shader: {:?}", vs_bytecode_path));
+        let fs_bytecode = std::fs::read(&fs_bytecode_path)
+            .unwrap_or_else(|_| panic!("Failed to fragment shader: {:?}", fs_bytecode_path));
 
         let vs_module_desc = ShaderModuleDescriptor {
             label: None,
@@ -104,12 +100,12 @@ impl ShaderPipeline {
                 layout: Some(&pipeline_layout),
                 vertex: VertexState {
                     module: &vs_module,
-                    entry_point: SHADER_ENTRY,
+                    entry_point: Self::SHADER_ENTRY,
                     buffers: T::VERTEX_BUFFER_LAYOUTS,
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
-                    entry_point: SHADER_ENTRY,
+                    entry_point: Self::SHADER_ENTRY,
                     targets: &fs_targets[..],
                 }),
                 primitive: T::PRIMITIVE_STATE,
@@ -128,6 +124,6 @@ impl ShaderPipeline {
             material_bind_group_layout,
         }
     }
-}
 
-pub const SHADER_ENTRY: &str = "main";
+    pub const SHADER_ENTRY: &'static str = "main";
+}
