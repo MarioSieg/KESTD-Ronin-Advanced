@@ -323,5 +323,11 @@ pub fn get_and_print_system_info() -> SystemInfo {
         );
     }
 
+    info!("Environment variables:");
+
+    for (k, v) in std::env::vars() {
+        info!("{:?} = {:?}", k, v);
+    }
+
     sys_info
 }
