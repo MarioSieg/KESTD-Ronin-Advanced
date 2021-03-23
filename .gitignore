@@ -11,5 +11,5 @@ Cargo.lock
 /config/
 .idea/
 .vs/
-engine.log
-engine.log
+proto/
+config/
