@@ -64,12 +64,13 @@ impl ResourceImporteur for Texture {
         use wgpu::*;
 
         let image = ImageReader::open(&path).unwrap().decode().unwrap();
+        let image = image.into_rgba8();
         let width = image.width();
         let height = image.height();
-        let texels = image.into_bytes().into_boxed_slice();
+        let texels = image.into_raw().into_boxed_slice();
 
         let mip_level_count = if width == height {
-            1 + (width.max(height) as f64).log2().floor() as u32
+            (width.max(height) as f64).log2().floor() as u32
         } else {
             1
         };
@@ -101,7 +102,7 @@ impl ResourceImporteur for Texture {
             &texels,
             TextureDataLayout {
                 offset: 0,
-                bytes_per_row: 4 * width as u32,
+                bytes_per_row: (texels.len() as f64 / extent.height as f64) as u32,
                 rows_per_image: 0,
             },
             extent,
