@@ -9,7 +9,7 @@ use graphics::GraphicsSystem;
 use memory::MemorySystem;
 use platform::PlatformSystem;
 
-pub trait System {
+pub trait SubSystem {
     type Args;
 
     fn initialize(cfg: &mut CoreConfig, data: &Self::Args) -> Self;
@@ -55,6 +55,6 @@ impl SystemSupervisor {
 }
 
 pub mod prelude {
-    pub use super::System;
+    pub use super::SubSystem;
     pub use crate::config::*;
 }

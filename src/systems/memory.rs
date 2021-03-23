@@ -9,7 +9,7 @@ pub struct MemorySystem {
     pub bump_allocator: BumpAllocator,
 }
 
-impl System for MemorySystem {
+impl SubSystem for MemorySystem {
     type Args = ();
 
     fn initialize(cfg: &mut CoreConfig, _: &Self::Args) -> Self {

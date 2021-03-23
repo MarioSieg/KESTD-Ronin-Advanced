@@ -1,7 +1,10 @@
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::default::Default;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+pub const CONFIG_DIR: &str = "config";
 
 #[derive(Serialize, Deserialize)]
 pub struct AppConfig {
@@ -14,7 +17,7 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub const FILE_NAME: &'static str = "config/app.yml.ini";
+    pub const FILE_NAME: &'static str = "app.ini";
 }
 
 impl Default for AppConfig {
@@ -37,7 +40,7 @@ pub struct MemoryConfig {
 }
 
 impl MemoryConfig {
-    pub const FILE_NAME: &'static str = "config/memory.yml.ini";
+    pub const FILE_NAME: &'static str = "memory.ini";
 }
 
 impl Default for MemoryConfig {
@@ -49,7 +52,7 @@ impl Default for MemoryConfig {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum WindowMode {
     FullScreen,
     Windowed,
@@ -65,7 +68,7 @@ pub struct DisplayConfig {
 }
 
 impl DisplayConfig {
-    pub const FILE_NAME: &'static str = "config/display.yml.ini";
+    pub const FILE_NAME: &'static str = "display.ini";
 }
 
 impl Default for DisplayConfig {
@@ -80,54 +83,99 @@ impl Default for DisplayConfig {
     }
 }
 
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+pub enum MsaaMode {
+    Off = 1,
+    X2 = 2,
+    X4 = 4,
+    X8 = 8,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GraphicsConfig {
+    pub msaa_mode: MsaaMode,
+}
+
+impl GraphicsConfig {
+    pub const FILE_NAME: &'static str = "graphics.ini";
+}
+
+impl Default for GraphicsConfig {
+    fn default() -> Self {
+        Self {
+            msaa_mode: MsaaMode::X8,
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct CoreConfig {
     pub application_config: AppConfig,
     pub memory_config: MemoryConfig,
     pub display_config: DisplayConfig,
+    pub graphics_config: GraphicsConfig,
+}
+
+macro_rules! deserialize_config {
+    ($dir:ident, $type:ty) => {
+    serde_yaml::from_str::<$type>(
+            &fs::read_to_string($dir.join(Path::new(<$type>::FILE_NAME)))
+                .unwrap_or_default(),
+        )
+        .unwrap_or_else(|_| {
+            warn!(
+                "Failed to load: \"{}\"! Setting default values...",
+                <$type>::FILE_NAME
+            );
+            warn!("Trying autofix by removing config files! Clean config files will be recreated when rebooting the engine!");
+            let _ = fs::remove_dir_all(&$dir);
+            std::default::Default::default()
+        })
+    };
+}
+
+macro_rules! serialize_config {
+    ($dir:ident, $self:ident, $data:ident, $type:ty) => {
+        fs::write(
+            $dir.join(Path::new(<$type>::FILE_NAME)),
+            serde_yaml::to_string(&$self.$data).unwrap_or_default(),
+        )
+    };
 }
 
 impl CoreConfig {
     pub fn load() -> Self {
-        if !Path::new("config/").exists() {
+        let config_dir = PathBuf::from(CONFIG_DIR);
+        info!(
+            "Parsing config from dir: {:?}",
+            fs::canonicalize(&config_dir).unwrap_or_default()
+        );
+        if !config_dir.exists() {
+            warn!("Config directory does not exist! Creating config...");
             let this = Self::default();
             let _ = this.save();
             return this;
         }
-        let application_config = serde_yaml::from_str::<AppConfig>(
-            &fs::read_to_string(Path::new(AppConfig::FILE_NAME)).unwrap_or_default(),
-        )
-        .unwrap_or_default();
-        let memory_config = serde_yaml::from_str::<MemoryConfig>(
-            &fs::read_to_string(Path::new(MemoryConfig::FILE_NAME)).unwrap_or_default(),
-        )
-        .unwrap_or_default();
-        let display_config = serde_yaml::from_str::<DisplayConfig>(
-            &fs::read_to_string(Path::new(DisplayConfig::FILE_NAME)).unwrap_or_default(),
-        )
-        .unwrap_or_default();
+        let application_config = deserialize_config!(config_dir, AppConfig);
+        let memory_config = deserialize_config!(config_dir, MemoryConfig);
+        let display_config = deserialize_config!(config_dir, DisplayConfig);
+        let graphics_config = deserialize_config!(config_dir, GraphicsConfig);
         Self {
             application_config,
             memory_config,
             display_config,
+            graphics_config,
         }
     }
 
     pub fn save(&self) -> std::io::Result<()> {
-        if !Path::new("config/").exists() {
-            fs::create_dir("config/")?;
+        let config_dir = &PathBuf::from(CONFIG_DIR);
+        if !config_dir.exists() {
+            fs::create_dir(config_dir)?;
         }
-        fs::write(
-            Path::new(AppConfig::FILE_NAME),
-            serde_yaml::to_string(&self.application_config).unwrap_or_default(),
-        )?;
-        fs::write(
-            Path::new(DisplayConfig::FILE_NAME),
-            serde_yaml::to_string(&self.display_config).unwrap_or_default(),
-        )?;
-        fs::write(
-            Path::new(MemoryConfig::FILE_NAME),
-            serde_yaml::to_string(&self.memory_config).unwrap_or_default(),
-        )
+        serialize_config!(config_dir, self, application_config, AppConfig)?;
+        serialize_config!(config_dir, self, memory_config, MemoryConfig)?;
+        serialize_config!(config_dir, self, display_config, DisplayConfig)?;
+        serialize_config!(config_dir, self, graphics_config, GraphicsConfig)
     }
 }

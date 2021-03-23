@@ -2,7 +2,9 @@ use super::config::CoreConfig;
 use super::systems::SystemSupervisor;
 use humantime::Duration;
 use log::*;
+use std::fs;
 use std::io::Write;
+use std::path::Path;
 use std::process;
 use std::time::Instant;
 
@@ -23,12 +25,28 @@ impl Engine {
         }
     }
 
+    const LOGGER_DIR: &'static str = "proto";
+
     fn create_logger() -> Result<(), log::SetLoggerError> {
         use colors::*;
         use fern::*;
         let mut colors = ColoredLevelConfig::new().info(Color::Green);
         colors.warn = Color::Magenta;
         colors.info = Color::BrightBlue;
+
+        let log_dir = Path::new(Self::LOGGER_DIR);
+        if !log_dir.exists() && fs::create_dir(log_dir).is_err() {
+            warn!(
+                "Failed to create log directory: {:?}! Log file creation might fail too!",
+                log_dir
+            );
+        }
+
+        let log_file_path = String::from(log_dir.to_str().unwrap_or_default())
+            + &chrono::Local::now()
+                .format("/engine_session_%Y_%m_%d_%H_%M_%S.log")
+                .to_string();
+        let log_file = fern::log_file(&log_file_path);
 
         #[allow(unused_mut)]
         let mut dispatch = Dispatch::new()
@@ -42,8 +60,13 @@ impl Engine {
                 ))
             })
             .level(Self::log_level_filter())
-            .chain(std::io::stdout())
-            .chain(fern::log_file("engine.log").expect("Failed to create log file!"));
+            .chain(std::io::stdout());
+
+        if let Ok(file) = log_file {
+            dispatch = dispatch.chain(file);
+        } else {
+            warn!("Failed to create log file: {:?}", log_file_path);
+        }
 
         #[cfg(not(debug_assertions))]
         {
@@ -91,11 +114,15 @@ impl Engine {
         Self::install_panic_hook();
         let clock = Instant::now();
         let _ = Self::create_logger();
+
         info!("Initializing KESTD Ronin simulation system...");
         info!("PID: {}", process::id());
+
         let mut config = CoreConfig::load();
         let systems = SystemSupervisor::initialize(&mut config);
+
         let this = Self { config, systems };
+
         info!(
             "System online! Boot time: {}",
             Duration::from(clock.elapsed())
