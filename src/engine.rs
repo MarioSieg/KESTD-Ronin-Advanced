@@ -117,6 +117,7 @@ impl Engine {
         let clock = Instant::now();
         let _ = Self::create_logger();
 
+        print!("{}", LOGO);
         info!("Initializing KESTD Ronin simulation system...");
         info!("PID: {}", process::id());
         info!(
@@ -175,3 +176,22 @@ impl Engine {
 
 #[global_allocator]
 static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+const LOGO: &str = r#"
+KKKKKKKKK    KKKKKKKEEEEEEEEEEEEEEEEEEEEEE   SSSSSSSSSSSSSSS TTTTTTTTTTTTTTTTTTTTTTTDDDDDDDDDDDDD
+K:::::::K    K:::::KE::::::::::::::::::::E SS:::::::::::::::ST:::::::::::::::::::::TD::::::::::::DDD
+K:::::::K    K:::::KE::::::::::::::::::::ES:::::SSSSSS::::::ST:::::::::::::::::::::TD:::::::::::::::DD
+K:::::::K   K::::::KEE::::::EEEEEEEEE::::ES:::::S     SSSSSSST:::::TT:::::::TT:::::TDDD:::::DDDDD:::::D
+KK::::::K  K:::::KKK  E:::::E       EEEEEES:::::S            TTTTTT  T:::::T  TTTTTT  D:::::D    D:::::D
+  K:::::K K:::::K     E:::::E             S:::::S                    T:::::T          D:::::D     D:::::D
+  K::::::K:::::K      E::::::EEEEEEEEEE    S::::SSSS                 T:::::T          D:::::D     D:::::D
+  K:::::::::::K       E:::::::::::::::E     SS::::::SSSSS            T:::::T          D:::::D     D:::::D
+  K:::::::::::K       E:::::::::::::::E       SSS::::::::SS          T:::::T          D:::::D     D:::::D
+  K::::::K:::::K      E::::::EEEEEEEEEE          SSSSSS::::S         T:::::T          D:::::D     D:::::D
+  K:::::K K:::::K     E:::::E                         S:::::S        T:::::T          D:::::D     D:::::D
+KK::::::K  K:::::KKK  E:::::E       EEEEEE            S:::::S        T:::::T          D:::::D    D:::::D
+K:::::::K   K::::::KEE::::::EEEEEEEE:::::ESSSSSSS     S:::::S      TT:::::::TT      DDD:::::DDDDD:::::D
+K:::::::K    K:::::KE::::::::::::::::::::ES::::::SSSSSS:::::S      T:::::::::T      D:::::::::::::::DD
+K:::::::K    K:::::KE::::::::::::::::::::ES:::::::::::::::SS       T:::::::::T      D::::::::::::DDD
+KKKKKKKKK    KKKKKKKEEEEEEEEEEEEEEEEEEEEEE SSSSSSSSSSSSSSS         TTTTTTTTTTT      DDDDDDDDDDDDD
+"#;
