@@ -1,4 +1,5 @@
 use super::prelude::*;
+use std::num::NonZeroU8;
 
 pub type Texel = u8;
 
@@ -129,7 +130,8 @@ impl ResourceImporteur for Texture {
             mag_filter: FilterMode::Linear,
             min_filter: FilterMode::Linear,
             mipmap_filter: FilterMode::Linear,
-            ..Default::default()
+            anisotropy_clamp: NonZeroU8::new(16),
+            ..std::default::Default::default()
         });
 
         Arc::new(Self {
