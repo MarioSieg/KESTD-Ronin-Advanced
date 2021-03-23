@@ -125,7 +125,14 @@ impl Drivers {
             },
         };
 
-        info!("Swapchain descriptor:\n{:#?}", swap_chain_desc);
+        info!("Swap chain usage: {:#?}", swap_chain_desc.usage);
+        info!("Swap chain format: {:#?}", swap_chain_desc.format);
+        info!("Swap chain width: {:#?}", swap_chain_desc.width);
+        info!("Swap chain height: {:#?}", swap_chain_desc.height);
+        info!(
+            "Swap chain present mode: {:#?}",
+            swap_chain_desc.present_mode
+        );
         info!("MSAA samples: {:?}", msaa_samples);
 
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);

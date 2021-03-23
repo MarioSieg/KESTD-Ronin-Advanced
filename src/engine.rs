@@ -127,10 +127,6 @@ impl Engine {
             "Executable: {:?}",
             std::env::current_exe().unwrap_or_default()
         );
-        info!("Environment variables:");
-        for (key, value) in std::env::vars() {
-            info!("{}: {}", key, value);
-        }
 
         let mut config = CoreConfig::load();
         let systems = SystemSupervisor::initialize(&mut config);
