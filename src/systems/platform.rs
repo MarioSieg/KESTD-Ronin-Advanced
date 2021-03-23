@@ -21,7 +21,7 @@ impl SubSystem for PlatformSystem {
         self.win_data.window.show();
     }
 
-    fn tick(&mut self) -> bool {
+    fn tick(&mut self, _world: &mut World) -> bool {
         self.win_data.context.poll_events();
         for (_, _) in flush_messages(&self.win_data.events) {}
         !self.win_data.window.should_close()

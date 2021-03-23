@@ -1,4 +1,5 @@
 use super::config::CoreConfig;
+use super::ecs::{self, World};
 use super::systems::SystemSupervisor;
 use humantime::Duration;
 use log::*;
@@ -11,6 +12,7 @@ use std::time::Instant;
 pub struct Engine {
     pub config: CoreConfig,
     pub systems: SystemSupervisor,
+    pub world: World,
 }
 
 impl Engine {
@@ -123,7 +125,7 @@ impl Engine {
         );
         info!(
             "Executable: {:?}",
-            std::env::current_dir().unwrap_or_default()
+            std::env::current_exe().unwrap_or_default()
         );
         info!("Environment variables:");
         for (key, value) in std::env::vars() {
@@ -132,8 +134,14 @@ impl Engine {
 
         let mut config = CoreConfig::load();
         let systems = SystemSupervisor::initialize(&mut config);
+        let mut world = World::default();
+        ecs::initialize_default_world(&systems, &mut world);
 
-        let this = Self { config, systems };
+        let this = Self {
+            config,
+            systems,
+            world,
+        };
 
         info!(
             "System online! Boot time: {}",
@@ -165,7 +173,7 @@ impl Engine {
     pub fn shutdown(&mut self) {}
 
     fn tick(&mut self) -> bool {
-        self.systems.tick_all()
+        self.systems.tick_all(&mut self.world)
     }
 }
 

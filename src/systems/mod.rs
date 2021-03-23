@@ -5,6 +5,7 @@ pub mod graphics;
 pub mod memory;
 pub mod platform;
 
+use crate::ecs::World;
 use graphics::GraphicsSystem;
 use memory::MemorySystem;
 use platform::PlatformSystem;
@@ -14,7 +15,7 @@ pub trait SubSystem {
 
     fn initialize(cfg: &mut CoreConfig, data: &Self::Args) -> Self;
     fn prepare(&mut self) {}
-    fn tick(&mut self) -> bool {
+    fn tick(&mut self, _world: &mut World) -> bool {
         true
     }
 }
@@ -49,12 +50,13 @@ impl SystemSupervisor {
         self.graphics.prepare();
     }
 
-    pub fn tick_all(&mut self) -> bool {
-        self.platform.tick() && self.memory.tick() && self.graphics.tick()
+    pub fn tick_all(&mut self, world: &mut World) -> bool {
+        self.platform.tick(world) && self.memory.tick(world) && self.graphics.tick(world)
     }
 }
 
 pub mod prelude {
     pub use super::SubSystem;
     pub use crate::config::*;
+    pub use crate::ecs::World;
 }
