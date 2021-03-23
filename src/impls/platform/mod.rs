@@ -48,15 +48,9 @@ impl WindowData {
                 let vids = monitor.get_video_modes();
                 info!("Video modes: {}", vids.len());
 
-                for (j, vid) in vids.iter().enumerate() {
-                    info!("Video mode: {}", j + 1);
-                    info!("Width: {}", vid.width);
-                    info!("Height: {}", vid.height);
-                    info!("Refresh rate: {}Hz", vid.refresh_rate);
-                    info!("R-Bits: {}", vid.red_bits);
-                    info!("G-Bits: {}", vid.green_bits);
-                    info!("B-Bits: {}", vid.blue_bits);
-                }
+                vids.into_par_iter().for_each(|vid| {
+                    info!("{:#?}", vid);
+                });
             }
         });
 

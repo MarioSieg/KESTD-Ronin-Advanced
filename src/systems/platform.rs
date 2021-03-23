@@ -6,7 +6,7 @@ pub struct PlatformSystem {
     pub sys_info: SystemInfo,
 }
 
-impl System for PlatformSystem {
+impl SubSystem for PlatformSystem {
     type Args = ();
 
     fn initialize(cfg: &mut CoreConfig, _: &Self::Args) -> Self {

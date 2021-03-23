@@ -1,6 +1,19 @@
 use super::Drivers;
+use crate::config::CoreConfig;
 use smallvec::{smallvec, SmallVec};
 use wgpu::*;
+
+pub trait Pipeline {
+    const NAME: &'static str;
+    const IS_SURFACE_PIPELINE: bool;
+    const INTERNAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry];
+    const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry];
+    const PRIMITIVE_STATE: PrimitiveState;
+    const VERTEX_BUFFER_LAYOUTS: &'static [VertexBufferLayout<'static>];
+
+    fn shader_pipeline(&self) -> &ShaderPipeline;
+    fn create(_drivers: &Drivers, _config: &CoreConfig) -> Self;
+}
 
 pub struct ShaderPipeline {
     pub vs_module: ShaderModule,
@@ -8,20 +21,79 @@ pub struct ShaderPipeline {
     pub fs_targets: SmallVec<[ColorTargetState; 8]>,
     pub pipeline_layout: PipelineLayout,
     pub render_pipeline: RenderPipeline,
+
+    pub internal_bind_group_layout: BindGroupLayout,
+    pub internal_bind_group: BindGroup,
+
+    pub material_bind_group_layout: BindGroupLayout,
+}
+
+pub struct ShaderPipelineDescriptor<'a> {
+    pub depth_stencil: Option<DepthStencilState>,
+    pub multi_sample_state: MultisampleState,
+    pub internal_bind_group_entries: &'a [BindGroupEntry<'a>],
 }
 
 impl ShaderPipeline {
-    pub fn create_shader_bundle(drivers: &Drivers, desc: ShaderPipelineDescriptor) -> Self {
-        let vs_module = drivers.device.create_shader_module(&desc.modules.0);
-        let fs_module = drivers.device.create_shader_module(&desc.modules.1);
+    pub fn create_shader_bundle<T: Pipeline>(
+        drivers: &Drivers,
+        desc: ShaderPipelineDescriptor,
+    ) -> Self {
+        let name = String::from(T::NAME).to_lowercase();
+
+        let vs_bytecode_path = format!("db/shaders/fixed_pipelines/{}/final/shader.vert.spv", name);
+        let fs_bytecode_path = format!("db/shaders/fixed_pipelines/{}/final/shader.frag.spv", name);
+
+        let vs_bytecode = std::fs::read(&vs_bytecode_path)
+            .unwrap_or_else(|_| panic!("Failed to load vertex shader: {:?}", vs_bytecode_path));
+        let fs_bytecode = std::fs::read(&fs_bytecode_path)
+            .unwrap_or_else(|_| panic!("Failed to fragment shader: {:?}", fs_bytecode_path));
+
+        let vs_module_desc = ShaderModuleDescriptor {
+            label: None,
+            source: util::make_spirv(&vs_bytecode[..]),
+            flags: ShaderFlags::VALIDATION,
+        };
+        let fs_module_desc = ShaderModuleDescriptor {
+            label: None,
+            source: util::make_spirv(&fs_bytecode[..]),
+            flags: ShaderFlags::VALIDATION,
+        };
+
+        let vs_module = drivers.device.create_shader_module(&vs_module_desc);
+        let fs_module = drivers.device.create_shader_module(&fs_module_desc);
         let fs_targets = smallvec![drivers.swap_chain_format.into()];
+
+        let internal_bind_group_layout =
+            drivers
+                .device
+                .create_bind_group_layout(&BindGroupLayoutDescriptor {
+                    label: None,
+                    entries: T::INTERNAL_BIND_GROUP_LAYOUT_ENTRIES,
+                });
+
+        let internal_bind_group = drivers.device.create_bind_group(&BindGroupDescriptor {
+            label: None,
+            layout: &internal_bind_group_layout,
+            entries: desc.internal_bind_group_entries,
+        });
+
+        let material_bind_group_layout =
+            drivers
+                .device
+                .create_bind_group_layout(&BindGroupLayoutDescriptor {
+                    label: None,
+                    entries: T::MATERIAL_BIND_GROUP_LAYOUT_ENTRIES,
+                });
+
         let pipeline_layout = drivers
             .device
             .create_pipeline_layout(&PipelineLayoutDescriptor {
                 label: None,
-                bind_group_layouts: desc.bind_group_layouts,
-                push_constant_ranges: desc.push_constant_ranges,
+                bind_group_layouts: &[&internal_bind_group_layout, &material_bind_group_layout][..],
+                push_constant_ranges: &[],
             });
+
         let render_pipeline = drivers
             .device
             .create_render_pipeline(&RenderPipelineDescriptor {
@@ -29,68 +101,30 @@ impl ShaderPipeline {
                 layout: Some(&pipeline_layout),
                 vertex: VertexState {
                     module: &vs_module,
-                    entry_point: SHADER_ENTRY,
-                    buffers: &[],
+                    entry_point: Self::SHADER_ENTRY,
+                    buffers: T::VERTEX_BUFFER_LAYOUTS,
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
-                    entry_point: SHADER_ENTRY,
+                    entry_point: Self::SHADER_ENTRY,
                     targets: &fs_targets[..],
                 }),
-                primitive: desc.primitive_state,
+                primitive: T::PRIMITIVE_STATE,
                 depth_stencil: desc.depth_stencil,
-                multisample: desc.multisample,
+                multisample: desc.multi_sample_state,
             });
+
         Self {
             vs_module,
             fs_module,
             fs_targets,
             pipeline_layout,
             render_pipeline,
+            internal_bind_group_layout,
+            internal_bind_group,
+            material_bind_group_layout,
         }
     }
-}
 
-pub struct ShaderPipelineDescriptor<'a> {
-    pub modules: &'a (ShaderModuleDescriptor<'a>, ShaderModuleDescriptor<'a>),
-    pub bind_group_layouts: &'a [&'a BindGroupLayout],
-    pub push_constant_ranges: &'a [PushConstantRange],
-    pub primitive_state: PrimitiveState,
-    pub depth_stencil: Option<DepthStencilState>,
-    pub multisample: MultisampleState,
-}
-
-impl<'a> ShaderPipelineDescriptor<'a> {
-    pub fn new_simple(
-        modules: &'a (ShaderModuleDescriptor<'a>, ShaderModuleDescriptor<'a>),
-    ) -> Self {
-        Self {
-            modules,
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
-            primitive_state: PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: MultisampleState::default(),
-        }
-    }
-}
-
-pub const SHADER_ENTRY: &str = "main";
-
-#[macro_export]
-macro_rules! load_shader {
-    ($name:literal) => {
-        &(
-            wgpu::include_spirv!(concat!(
-                "../../db/shaders/fixed_pipelines/",
-                $name,
-                "/final/shader.vert.spv"
-            )),
-            wgpu::include_spirv!(concat!(
-                "../../db/shaders/fixed_pipelines/",
-                $name,
-                "/final/shader.frag.spv"
-            )),
-        )
-    };
+    pub const SHADER_ENTRY: &'static str = "main";
 }
