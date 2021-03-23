@@ -1,5 +1,4 @@
 use super::prelude::*;
-use image::GenericImageView;
 
 pub type Texel = u8;
 
@@ -63,8 +62,12 @@ impl ResourceImporteur for Texture {
         use image::io::Reader as ImageReader;
         use wgpu::*;
 
-        let image = ImageReader::open(&path).unwrap().decode().unwrap();
-        let image = image.into_rgba8();
+        let image = ImageReader::open(&path)
+            .unwrap()
+            .decode()
+            .unwrap()
+            .flipv()
+            .into_rgba8();
         let width = image.width();
         let height = image.height();
         let texels = image.into_raw().into_boxed_slice();
