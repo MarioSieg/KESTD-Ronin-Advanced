@@ -1,9 +1,9 @@
 pub mod components {
-    use crate::resources::{mesh::Mesh, texture::Texture};
+    use crate::resources::{material::Material, mesh::Mesh};
     use std::sync::Arc;
 
     pub struct MeshRenderer {
         pub mesh: Arc<Mesh>,
-        pub texture: Arc<Texture>,
+        pub material: Arc<Material>,
     }
 }

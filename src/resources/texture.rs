@@ -53,13 +53,14 @@ impl Texture {
 
 impl ResourceImporteur for Texture {
     type ImportSystem = graphics::GraphicsSystem;
+    type MetaData = PathBuf;
 
     #[inline]
-    fn path(&self) -> &PathBuf {
+    fn meta_data(&self) -> &Self::MetaData {
         &self.path
     }
 
-    fn load(system: &Self::ImportSystem, path: PathBuf) -> Arc<Self> {
+    fn load(system: &Self::ImportSystem, path: Self::MetaData) -> Arc<Self> {
         use image::io::Reader as ImageReader;
         use wgpu::*;
 

@@ -3,15 +3,15 @@ pub mod mesh;
 pub mod texture;
 
 use super::systems::SubSystem;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 pub trait ResourceImporteur {
     type ImportSystem: SubSystem;
+    type MetaData;
 
-    fn path(&self) -> &PathBuf;
+    fn meta_data(&self) -> &Self::MetaData;
 
-    fn load(_system: &Self::ImportSystem, _path: PathBuf) -> Arc<Self>;
+    fn load(_system: &Self::ImportSystem, _data: Self::MetaData) -> Arc<Self>;
 }
 
 mod prelude {

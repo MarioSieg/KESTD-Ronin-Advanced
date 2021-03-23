@@ -63,13 +63,14 @@ impl Mesh {
 
 impl ResourceImporteur for Mesh {
     type ImportSystem = graphics::GraphicsSystem;
+    type MetaData = PathBuf;
 
     #[inline]
-    fn path(&self) -> &PathBuf {
+    fn meta_data(&self) -> &Self::MetaData {
         &self.path
     }
 
-    fn load(system: &Self::ImportSystem, path: PathBuf) -> Arc<Self> {
+    fn load(system: &Self::ImportSystem, path: Self::MetaData) -> Arc<Self> {
         use obj::{load_obj, Obj, TexturedVertex};
         use rayon::iter::*;
         use wgpu::util::{BufferInitDescriptor, DeviceExt};
