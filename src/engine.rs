@@ -117,7 +117,7 @@ impl Engine {
         let clock = Instant::now();
         let _ = Self::create_logger();
 
-        print!("{}", LOGO);
+        println!("{}", LOGO);
         info!("Initializing KESTD Ronin simulation system...");
         info!("PID: {}", process::id());
         info!(
