@@ -117,6 +117,18 @@ impl Engine {
 
         info!("Initializing KESTD Ronin simulation system...");
         info!("PID: {}", process::id());
+        info!(
+            "Working directory: {:?}",
+            std::env::current_dir().unwrap_or_default()
+        );
+        info!(
+            "Executable: {:?}",
+            std::env::current_dir().unwrap_or_default()
+        );
+        info!("Environment variables:");
+        for (key, value) in std::env::vars() {
+            info!("{}: {}", key, value);
+        }
 
         let mut config = CoreConfig::load();
         let systems = SystemSupervisor::initialize(&mut config);

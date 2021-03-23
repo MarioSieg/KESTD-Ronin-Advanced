@@ -5,8 +5,8 @@ pub type Texel = u8;
 
 pub struct Texture {
     path: PathBuf,
-    width: u16,
-    height: u16,
+    width: u32,
+    height: u32,
     texels: Box<[Texel]>,
     extent: wgpu::Extent3d,
     texture: wgpu::Texture,
@@ -16,12 +16,12 @@ pub struct Texture {
 
 impl Texture {
     #[inline]
-    pub fn width(&self) -> u16 {
+    pub fn width(&self) -> u32 {
         self.width
     }
 
     #[inline]
-    pub fn height(&self) -> u16 {
+    pub fn height(&self) -> u32 {
         self.height
     }
 
@@ -64,25 +64,34 @@ impl ResourceImporteur for Texture {
         use wgpu::*;
 
         let image = ImageReader::open(&path).unwrap().decode().unwrap();
-        let width = image.width() as u16;
-        let height = image.height() as u16;
+        let width = image.width();
+        let height = image.height();
         let texels = image.into_bytes().into_boxed_slice();
 
+        let mip_level_count = if width == height {
+            1 + (width.max(height) as f64).log2().floor() as u32
+        } else {
+            1
+        };
+
         let extent = Extent3d {
-            width: width as u32,
-            height: height as u32,
+            width,
+            height,
             depth: 1,
         };
+
+        let format = TextureFormat::Rgba8UnormSrgb;
+
         let texture = system.drivers.device.create_texture(&TextureDescriptor {
             label: None,
             size: extent,
-            mip_level_count: 1,
+            mip_level_count,
             sample_count: 1,
             dimension: TextureDimension::D2,
-            format: TextureFormat::Rgba8UnormSrgb,
-            usage: TextureUsage::SAMPLED | TextureUsage::COPY_DST,
+            format,
+            usage: TextureUsage::SAMPLED | TextureUsage::RENDER_ATTACHMENT | TextureUsage::COPY_DST,
         });
-        let view = texture.create_view(&TextureViewDescriptor::default());
+
         system.drivers.queue.write_texture(
             TextureCopyView {
                 texture: &texture,
@@ -97,15 +106,28 @@ impl ResourceImporteur for Texture {
             },
             extent,
         );
+
+        let mut encoder = system
+            .drivers
+            .device
+            .create_command_encoder(&CommandEncoderDescriptor::default());
+        system
+            .drivers
+            .generate_mipmaps(&mut encoder, &texture, format, mip_level_count);
+        system.drivers.queue.submit(Some(encoder.finish()));
+
+        let view = texture.create_view(&TextureViewDescriptor::default());
+
         let sampler = system.drivers.device.create_sampler(&SamplerDescriptor {
             address_mode_u: AddressMode::ClampToEdge,
             address_mode_v: AddressMode::ClampToEdge,
             address_mode_w: AddressMode::ClampToEdge,
-            mag_filter: FilterMode::Nearest,
+            mag_filter: FilterMode::Linear,
             min_filter: FilterMode::Linear,
-            mipmap_filter: FilterMode::Nearest,
+            mipmap_filter: FilterMode::Linear,
             ..Default::default()
         });
+
         Arc::new(Self {
             path,
             width,
