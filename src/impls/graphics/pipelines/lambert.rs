@@ -55,8 +55,8 @@ impl Pipeline for LambertPipeline {
     };
 
     const VERTEX_BUFFER_LAYOUTS: &'static [VertexBufferLayout<'static>] = &[VertexBufferLayout {
-        array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-        step_mode: wgpu::InputStepMode::Vertex,
+        array_stride: std::mem::size_of::<Vertex>() as BufferAddress,
+        step_mode: InputStepMode::Vertex,
         attributes: &vertex_attr_array![
             0 => Float4,
             1 => Float2
@@ -84,7 +84,7 @@ impl Pipeline for LambertPipeline {
         let view_projection_buffer = drivers.device.create_buffer_init(&BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(mx_ref),
-            usage: wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+            usage: BufferUsage::UNIFORM | BufferUsage::COPY_DST,
         });
 
         let internal_bind_group_entries = &[BindGroupEntry {

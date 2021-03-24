@@ -36,7 +36,7 @@ pub struct Frame<'a> {
 impl<'a> Frame<'a> {
     pub fn create_pass(&mut self) -> Pass {
         let ops = Operations {
-            load: LoadOp::Clear(Color::WHITE),
+            load: LoadOp::Clear(Color::BLACK),
             store: true,
         };
         let color_attachment = if self.samples == MsaaMode::Off {
@@ -110,8 +110,11 @@ impl Drivers {
         info!("GPU: {}", info.name);
         info!("API: {:?}", info.backend);
         info!("Type: {:?}", info.device_type);
-
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface);
+        info!(
+            "Texture format features: {:?}",
+            adapter.get_texture_format_features(swap_chain_format)
+        );
 
         let swap_chain_desc = SwapChainDescriptor {
             usage: TextureUsage::RENDER_ATTACHMENT | TextureUsage::COPY_SRC,
