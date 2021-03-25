@@ -13,5 +13,11 @@ pipeline {
           bat 'cargo clippy'
         }
       }
+      stage('run') {
+        steps {
+          bat 'cargo run --release --all-features'
+          bat 'cargo run --all-features'
+        }
+      }
     }
 }
