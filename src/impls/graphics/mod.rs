@@ -92,7 +92,7 @@ impl Drivers {
     }
 
     pub fn initialize(window: &glfw::Window, config: &CoreConfig) -> Self {
-        let instance = Instance::new(BackendBit::PRIMARY);
+        let instance = Instance::new(BackendBit::VULKAN);
         let surface = unsafe { instance.create_surface(window) };
         let (adapter, device, queue) = futures::executor::block_on(Self::create_async_resources(
             &instance,
@@ -113,7 +113,7 @@ impl Drivers {
         );
 
         let swap_chain_desc = SwapChainDescriptor {
-            usage: TextureUsage::RENDER_ATTACHMENT | TextureUsage::COPY_SRC,
+            usage: TextureUsage::RENDER_ATTACHMENT,
             format: swap_chain_format,
             width: window.get_framebuffer_size().0 as _,
             height: window.get_framebuffer_size().1 as _,
