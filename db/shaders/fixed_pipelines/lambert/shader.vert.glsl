@@ -11,5 +11,5 @@ layout(push_constant) uniform pushContants {
 
 void main() {
     v_TexCoord = a_TexCoord;
-    gl_Position = (u_World * u_ViewProjection) * a_Pos;
+    gl_Position = (u_ViewProjection * u_World) * a_Pos;
 }

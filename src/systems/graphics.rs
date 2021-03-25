@@ -5,12 +5,13 @@ use crate::impls::graphics::matrix::CORRECTION_MATRIX;
 use crate::impls::graphics::prelude::*;
 use crate::impls::platform::prelude::WindowHandle;
 use bytemuck::{Pod, Zeroable};
-use cgmath::{perspective, Deg, Matrix4, Point3, SquareMatrix, Vector3};
+use cgmath::{perspective, Deg, Matrix4, Point3, Vector3};
 use wgpu::ShaderStage;
 
 pub struct GraphicsSystem {
     pub drivers: Drivers,
     pub lambert_pipeline: LambertPipeline,
+    y: f32,
 }
 
 impl SubSystem for GraphicsSystem {
@@ -32,6 +33,7 @@ impl SubSystem for GraphicsSystem {
         Self {
             drivers,
             lambert_pipeline,
+            y: 0.0,
         }
     }
 
@@ -57,12 +59,13 @@ impl SubSystem for GraphicsSystem {
 
             let view_projection_matrix = CORRECTION_MATRIX * projection * view_matrix;
 
-            let world_matrix = Matrix4::identity();
+            let world_matrix = Matrix4::from_angle_y(Deg(self.y));
+            self.y += 0.1;
 
             #[derive(Copy, Clone)]
             struct PushConstantData {
-                pub view_proj: Matrix4<f32>,
                 pub world: Matrix4<f32>,
+                pub view_proj: Matrix4<f32>,
             }
 
             unsafe impl Pod for PushConstantData {}
