@@ -23,11 +23,11 @@ use components::*;
 
 pub fn initialize_default_world(systems: &SystemSupervisor, world: &mut World) {
     let renderer = MeshRenderer {
-        mesh: Mesh::load(&systems.graphics, PathBuf::from("db/meshes/earth.obj")),
+        mesh: Mesh::load(&systems.graphics, PathBuf::from("db/meshes/cube.obj")),
         material: Material::load(
             &systems.graphics,
             MaterialProperties::Lambert {
-                albedo: Texture::load(&systems.graphics, PathBuf::from("db/textures/earth.png")),
+                albedo: Texture::load(&systems.graphics, PathBuf::from("db/textures/grid.png")),
             },
         ),
     };
