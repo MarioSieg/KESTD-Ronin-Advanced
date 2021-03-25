@@ -4,7 +4,7 @@ pub mod pipeline;
 pub mod pipelines;
 pub mod prelude;
 
-use crate::config::MsaaMode;
+use crate::config::{CoreConfig, GraphicsConfig, MsaaMode};
 use crate::impls::graphics::prelude::Pipeline;
 use log::info;
 use pass::Pass;
@@ -91,18 +91,14 @@ impl Drivers {
         }
     }
 
-    pub fn initialize(
-        window: &glfw::Window,
-        power_safe_mode: bool,
-        vsync: bool,
-        msaa_samples: MsaaMode,
-    ) -> Self {
+    pub fn initialize(window: &glfw::Window, config: &CoreConfig) -> Self {
         let instance = Instance::new(BackendBit::PRIMARY);
         let surface = unsafe { instance.create_surface(window) };
         let (adapter, device, queue) = futures::executor::block_on(Self::create_async_resources(
             &instance,
             &surface,
-            power_safe_mode,
+            config.application_config.power_safe_mode,
+            &config.graphics_config,
         ));
 
         let info = adapter.get_info();
@@ -121,7 +117,7 @@ impl Drivers {
             format: swap_chain_format,
             width: window.get_framebuffer_size().0 as _,
             height: window.get_framebuffer_size().1 as _,
-            present_mode: if vsync {
+            present_mode: if config.display_config.vsync {
                 PresentMode::Fifo
             } else {
                 PresentMode::Mailbox
@@ -136,12 +132,15 @@ impl Drivers {
             "Swap chain present mode: {:#?}",
             swap_chain_desc.present_mode
         );
-        info!("MSAA samples: {:?}", msaa_samples);
+        info!("MSAA samples: {:?}", config.graphics_config.msaa_mode);
 
         let swap_chain = device.create_swap_chain(&surface, &swap_chain_desc);
 
-        let frame_buffer =
-            Self::create_multisampled_framebuffer(&device, &swap_chain_desc, msaa_samples as u32);
+        let frame_buffer = Self::create_multisampled_framebuffer(
+            &device,
+            &swap_chain_desc,
+            config.graphics_config.msaa_mode as u32,
+        );
 
         let vs_bytecode_path = "db/shaders/mipgen/final/blit.vert.spv";
         let fs_bytecode_path = "db/shaders/mipgen/final/blit.frag.spv";
@@ -176,7 +175,7 @@ impl Drivers {
             swap_chain_desc,
             swap_chain_format,
             frame_buffer,
-            msaa_samples,
+            msaa_samples: config.graphics_config.msaa_mode,
             blit_shader,
         }
     }
@@ -274,23 +273,12 @@ impl Drivers {
     }
 
     pub const REQUIRED_DEVICE_FEATURES: Features = Features::PUSH_CONSTANTS;
-    pub const REQUIRED_DEVICE_LIMITS: Limits = Limits {
-        max_bind_groups: 4,
-        max_dynamic_uniform_buffers_per_pipeline_layout: 8,
-        max_dynamic_storage_buffers_per_pipeline_layout: 4,
-        max_sampled_textures_per_shader_stage: 16,
-        max_samplers_per_shader_stage: 16,
-        max_storage_buffers_per_shader_stage: 4,
-        max_storage_textures_per_shader_stage: 4,
-        max_uniform_buffers_per_shader_stage: 12,
-        max_uniform_buffer_binding_size: 16384,
-        max_push_constant_size: 256,
-    };
 
     async fn create_async_resources(
         instance: &Instance,
         surface: &Surface,
         low_power_mode: bool,
+        config: &GraphicsConfig,
     ) -> (Adapter, Device, Queue) {
         let adapter = instance
             .request_adapter(&RequestAdapterOptions {
@@ -308,7 +296,24 @@ impl Drivers {
                 &DeviceDescriptor {
                     label: None,
                     features: Self::REQUIRED_DEVICE_FEATURES,
-                    limits: Self::REQUIRED_DEVICE_LIMITS,
+                    limits: Limits {
+                        max_bind_groups: config.max_bind_groups,
+                        max_dynamic_uniform_buffers_per_pipeline_layout: config
+                            .max_dynamic_uniform_buffers_per_pipeline_layout,
+                        max_dynamic_storage_buffers_per_pipeline_layout: config
+                            .max_dynamic_storage_buffers_per_pipeline_layout,
+                        max_sampled_textures_per_shader_stage: config
+                            .max_sampled_textures_per_shader_stage,
+                        max_samplers_per_shader_stage: config.max_samplers_per_shader_stage,
+                        max_storage_buffers_per_shader_stage: config
+                            .max_storage_buffers_per_shader_stage,
+                        max_storage_textures_per_shader_stage: config
+                            .max_storage_textures_per_shader_stage,
+                        max_uniform_buffers_per_shader_stage: config
+                            .max_uniform_buffers_per_shader_stage,
+                        max_uniform_buffer_binding_size: config.max_uniform_buffer_binding_size,
+                        max_push_constant_size: config.max_push_constant_pool_byte_size,
+                    },
                 },
                 None,
             )

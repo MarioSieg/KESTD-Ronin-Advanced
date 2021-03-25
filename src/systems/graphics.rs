@@ -21,12 +21,7 @@ impl SubSystem for GraphicsSystem {
         let is_power_safe_mode = cfg.application_config.power_safe_mode;
         let use_vsync = cfg.display_config.vsync;
 
-        let drivers = Drivers::initialize(
-            window,
-            is_power_safe_mode,
-            use_vsync,
-            cfg.graphics_config.msaa_mode,
-        );
+        let drivers = Drivers::initialize(window, cfg);
 
         let lambert_pipeline = LambertPipeline::create(&drivers, cfg);
 

@@ -94,6 +94,16 @@ pub enum MsaaMode {
 #[derive(Serialize, Deserialize)]
 pub struct GraphicsConfig {
     pub msaa_mode: MsaaMode,
+    pub max_bind_groups: u32,
+    pub max_dynamic_uniform_buffers_per_pipeline_layout: u32,
+    pub max_dynamic_storage_buffers_per_pipeline_layout: u32,
+    pub max_sampled_textures_per_shader_stage: u32,
+    pub max_samplers_per_shader_stage: u32,
+    pub max_storage_buffers_per_shader_stage: u32,
+    pub max_storage_textures_per_shader_stage: u32,
+    pub max_uniform_buffers_per_shader_stage: u32,
+    pub max_uniform_buffer_binding_size: u32,
+    pub max_push_constant_pool_byte_size: u32,
 }
 
 impl GraphicsConfig {
@@ -104,6 +114,16 @@ impl Default for GraphicsConfig {
     fn default() -> Self {
         Self {
             msaa_mode: MsaaMode::X8,
+            max_bind_groups: 4,
+            max_dynamic_uniform_buffers_per_pipeline_layout: 8,
+            max_dynamic_storage_buffers_per_pipeline_layout: 4,
+            max_sampled_textures_per_shader_stage: 16,
+            max_samplers_per_shader_stage: 16,
+            max_storage_buffers_per_shader_stage: 4,
+            max_storage_textures_per_shader_stage: 4,
+            max_uniform_buffers_per_shader_stage: 12,
+            max_uniform_buffer_binding_size: 16384,
+            max_push_constant_pool_byte_size: 256,
         }
     }
 }
