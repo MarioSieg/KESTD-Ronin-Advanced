@@ -36,7 +36,7 @@ pub struct Frame<'a> {
 impl<'a> Frame<'a> {
     pub fn create_pass(&mut self) -> Pass {
         let ops = Operations {
-            load: LoadOp::Clear(Color::BLACK),
+            load: LoadOp::Clear(Color::WHITE),
             store: true,
         };
         let color_attachment = if self.samples == MsaaMode::Off {

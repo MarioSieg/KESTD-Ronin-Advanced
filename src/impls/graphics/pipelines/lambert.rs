@@ -11,7 +11,7 @@ impl Pipeline for LambertPipeline {
 
     const IS_SURFACE_PIPELINE: bool = true;
 
-    const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry] = &[
+    const PER_MATERIAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry] = &[
         BindGroupLayoutEntry {
             binding: 0,
             visibility: ShaderStage::FRAGMENT,
@@ -51,10 +51,10 @@ impl Pipeline for LambertPipeline {
     }];
 
     const PUSH_CONSTANT_RANGES: &'static [PushConstantRange] = &[
-        // mat4x4 - transform
+        // 2 * mat4x4 - word matrix, view projection matrix
         PushConstantRange {
             stages: ShaderStage::VERTEX,
-            range: (0..64),
+            range: (0..128),
         },
     ];
 

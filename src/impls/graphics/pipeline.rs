@@ -6,7 +6,7 @@ use wgpu::*;
 pub trait Pipeline {
     const NAME: &'static str;
     const IS_SURFACE_PIPELINE: bool;
-    const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry];
+    const PER_MATERIAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry];
     const PRIMITIVE_STATE: PrimitiveState;
     const VERTEX_BUFFER_LAYOUTS: &'static [VertexBufferLayout<'static>];
     const PUSH_CONSTANT_RANGES: &'static [PushConstantRange];
@@ -21,7 +21,7 @@ pub struct ShaderPipeline {
     pub fs_targets: SmallVec<[ColorTargetState; 8]>,
     pub pipeline_layout: PipelineLayout,
     pub render_pipeline: RenderPipeline,
-    pub material_bind_group_layout: BindGroupLayout,
+    pub per_material_bind_group_layout: BindGroupLayout,
 }
 
 pub struct ShaderPipelineDescriptor {
@@ -64,7 +64,7 @@ impl ShaderPipeline {
                 .device
                 .create_bind_group_layout(&BindGroupLayoutDescriptor {
                     label: None,
-                    entries: T::MATERIAL_BIND_GROUP_LAYOUT_ENTRIES,
+                    entries: T::PER_MATERIAL_BIND_GROUP_LAYOUT_ENTRIES,
                 });
 
         let pipeline_layout = drivers
@@ -101,7 +101,7 @@ impl ShaderPipeline {
             fs_targets,
             pipeline_layout,
             render_pipeline,
-            material_bind_group_layout,
+            per_material_bind_group_layout: material_bind_group_layout,
         }
     }
 

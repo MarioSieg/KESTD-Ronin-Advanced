@@ -44,7 +44,7 @@ impl ResourceImporteur for Material {
                         layout: &system
                             .lambert_pipeline
                             .shader_pipeline
-                            .material_bind_group_layout,
+                            .per_material_bind_group_layout,
                         entries: &[
                             BindGroupEntry {
                                 binding: 0,
