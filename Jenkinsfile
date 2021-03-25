@@ -3,14 +3,14 @@ pipeline {
     stages {
       stage('build') {
         steps {
-          sh 'cargo build --release --all-features'
-          sh 'cargo build --all-features'
+          bat 'cargo build --release --all-features'
+          bat 'cargo build --all-features'
         }
       }
       stage('test') {
         steps {
-          sh 'cargo test'
-          sh 'cargo clippy'
+          bat 'cargo test'
+          bat 'cargo clippy'
         }
       }
     }
