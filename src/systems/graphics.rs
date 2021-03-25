@@ -1,17 +1,42 @@
 use super::prelude::*;
-use crate::ecs::components::MeshRenderer;
+use crate::ecs::components::{Camera, MeshRenderer, Transform};
 use crate::ecs::IntoQuery;
 use crate::impls::graphics::matrix::CORRECTION_MATRIX;
 use crate::impls::graphics::prelude::*;
 use crate::impls::platform::prelude::WindowHandle;
+use crate::math::{perspective, EuclideanSpace, Matrix4, Point3, SquareMatrix, Vector3};
 use bytemuck::{Pod, Zeroable};
-use cgmath::{perspective, Deg, Matrix4, Point3, Vector3};
+use log::warn;
 use wgpu::ShaderStage;
 
 pub struct GraphicsSystem {
     pub drivers: Drivers,
     pub lambert_pipeline: LambertPipeline,
-    y: f32,
+}
+
+impl GraphicsSystem {
+    #[inline]
+    pub fn aspect_ratio(&self) -> f32 {
+        let width = self.drivers.swap_chain_desc.width as f32;
+        let height = self.drivers.swap_chain_desc.height as f32;
+        width / height
+    }
+
+    fn compute_camera(&self, camera_entity: (&Transform, &Camera)) -> Matrix4<f32> {
+        let trans = camera_entity.0;
+        let cam = camera_entity.1;
+
+        let projection_matrix =
+            perspective(cam.fov, self.aspect_ratio(), cam.near_clip, cam.far_clip);
+
+        let view_matrix = Matrix4::look_at_rh(
+            Point3::from_vec(trans.position),
+            Point3::new(0.0, 0.0, 0.0),
+            Vector3::unit_y(),
+        );
+
+        CORRECTION_MATRIX * projection_matrix * view_matrix
+    }
 }
 
 impl SubSystem for GraphicsSystem {
@@ -24,63 +49,54 @@ impl SubSystem for GraphicsSystem {
         Self {
             drivers,
             lambert_pipeline,
-            y: 0.0,
         }
     }
 
     fn tick(&mut self, world: &mut World) -> bool {
+        let mut flag = true;
         let mut frame = self.drivers.begin_frame();
         {
             let mut pass = frame.create_pass();
             pass.set_pipeline(&self.lambert_pipeline);
 
-            let projection = perspective(
-                Deg(75.0),
-                self.drivers.swap_chain_desc.width as f32
-                    / self.drivers.swap_chain_desc.height as f32,
-                1.0,
-                10.0,
-            );
-
-            let view_matrix = Matrix4::look_at_rh(
-                Point3::new(1.5, 0.0, 5.0),
-                Point3::new(0.0, 0.0, 0.0),
-                Vector3::unit_y(),
-            );
-
-            let view_projection_matrix = CORRECTION_MATRIX * projection * view_matrix;
-
-            let world_matrix = Matrix4::from_angle_y(Deg(self.y));
-            self.y += 0.1;
-
-            #[derive(Copy, Clone)]
-            struct PushConstantData {
-                pub world: Matrix4<f32>,
-                pub view_proj: Matrix4<f32>,
-            }
-
-            unsafe impl Pod for PushConstantData {}
-            unsafe impl Zeroable for PushConstantData {}
-
-            let push_constant_data = PushConstantData {
-                world: world_matrix,
-                view_proj: view_projection_matrix,
+            let camera = <(&Transform, &Camera)>::query().iter(world).next();
+            let view_proj_matrix = if let Some(camera) = camera {
+                self.compute_camera(camera)
+            } else {
+                flag = false;
+                warn!("No camera found!");
+                Matrix4::identity()
             };
 
-            pass.set_push_constans(
-                ShaderStage::VERTEX,
-                0,
-                bytemuck::bytes_of(&push_constant_data),
-            );
+            let mut query = <(&Transform, &MeshRenderer)>::query();
+            for (transform, renderer) in query.iter(world) {
+                let world_matrix = transform.compute_world();
 
-            let mut query = <&MeshRenderer>::query();
-            for renderer in query.iter(world) {
+                let push_constant_data = PushConstantData {
+                    world_matrix,
+                    view_proj_matrix,
+                };
+
+                pass.set_push_constans(
+                    ShaderStage::VERTEX,
+                    0,
+                    bytemuck::bytes_of(&push_constant_data),
+                );
                 pass.set_bind_group(0, renderer.material.bind_group());
                 pass.draw_indexed(&renderer.mesh);
             }
         }
 
         frame.end();
-        true
+        flag
     }
 }
+
+#[derive(Copy, Clone)]
+struct PushConstantData {
+    pub world_matrix: Matrix4<f32>,
+    pub view_proj_matrix: Matrix4<f32>,
+}
+
+unsafe impl Pod for PushConstantData {}
+unsafe impl Zeroable for PushConstantData {}

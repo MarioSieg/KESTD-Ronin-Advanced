@@ -113,7 +113,7 @@ impl Drivers {
         );
 
         let swap_chain_desc = SwapChainDescriptor {
-            usage: TextureUsage::RENDER_ATTACHMENT,
+            usage: TextureUsage::RENDER_ATTACHMENT | TextureUsage::COPY_SRC,
             format: swap_chain_format,
             width: window.get_framebuffer_size().0 as _,
             height: window.get_framebuffer_size().1 as _,
