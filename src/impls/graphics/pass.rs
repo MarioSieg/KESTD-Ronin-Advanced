@@ -7,6 +7,11 @@ pub struct Pass<'a>(pub RenderPass<'a>);
 
 impl<'a> Pass<'a> {
     #[inline]
+    pub fn set_push_constans(&mut self, stage: ShaderStage, offset: u32, data: &[u8]) {
+        self.0.set_push_constants(stage, offset, data)
+    }
+
+    #[inline]
     pub fn set_pipeline<T: Pipeline>(&mut self, pipe: &'a T) {
         self.0.set_pipeline(&pipe.shader_pipeline().render_pipeline);
     }

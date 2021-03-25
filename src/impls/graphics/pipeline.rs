@@ -6,10 +6,10 @@ use wgpu::*;
 pub trait Pipeline {
     const NAME: &'static str;
     const IS_SURFACE_PIPELINE: bool;
-    const INTERNAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry];
     const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry];
     const PRIMITIVE_STATE: PrimitiveState;
     const VERTEX_BUFFER_LAYOUTS: &'static [VertexBufferLayout<'static>];
+    const PUSH_CONSTANT_RANGES: &'static [PushConstantRange];
 
     fn shader_pipeline(&self) -> &ShaderPipeline;
     fn create(_drivers: &Drivers, _config: &CoreConfig) -> Self;
@@ -21,17 +21,12 @@ pub struct ShaderPipeline {
     pub fs_targets: SmallVec<[ColorTargetState; 8]>,
     pub pipeline_layout: PipelineLayout,
     pub render_pipeline: RenderPipeline,
-
-    pub internal_bind_group_layout: BindGroupLayout,
-    pub internal_bind_group: BindGroup,
-
     pub material_bind_group_layout: BindGroupLayout,
 }
 
-pub struct ShaderPipelineDescriptor<'a> {
+pub struct ShaderPipelineDescriptor {
     pub depth_stencil: Option<DepthStencilState>,
     pub multi_sample_state: MultisampleState,
-    pub internal_bind_group_entries: &'a [BindGroupEntry<'a>],
 }
 
 impl ShaderPipeline {
@@ -52,7 +47,7 @@ impl ShaderPipeline {
         let vs_module_desc = ShaderModuleDescriptor {
             label: None,
             source: util::make_spirv(&vs_bytecode[..]),
-            flags: ShaderFlags::VALIDATION,
+            flags: ShaderFlags::default(),
         };
         let fs_module_desc = ShaderModuleDescriptor {
             label: None,
@@ -63,20 +58,6 @@ impl ShaderPipeline {
         let vs_module = drivers.device.create_shader_module(&vs_module_desc);
         let fs_module = drivers.device.create_shader_module(&fs_module_desc);
         let fs_targets = smallvec![drivers.swap_chain_format.into()];
-
-        let internal_bind_group_layout =
-            drivers
-                .device
-                .create_bind_group_layout(&BindGroupLayoutDescriptor {
-                    label: None,
-                    entries: T::INTERNAL_BIND_GROUP_LAYOUT_ENTRIES,
-                });
-
-        let internal_bind_group = drivers.device.create_bind_group(&BindGroupDescriptor {
-            label: None,
-            layout: &internal_bind_group_layout,
-            entries: desc.internal_bind_group_entries,
-        });
 
         let material_bind_group_layout =
             drivers
@@ -90,8 +71,8 @@ impl ShaderPipeline {
             .device
             .create_pipeline_layout(&PipelineLayoutDescriptor {
                 label: None,
-                bind_group_layouts: &[&internal_bind_group_layout, &material_bind_group_layout][..],
-                push_constant_ranges: &[],
+                bind_group_layouts: &[&material_bind_group_layout][..],
+                push_constant_ranges: T::PUSH_CONSTANT_RANGES,
             });
 
         let render_pipeline = drivers
@@ -120,8 +101,6 @@ impl ShaderPipeline {
             fs_targets,
             pipeline_layout,
             render_pipeline,
-            internal_bind_group_layout,
-            internal_bind_group,
             material_bind_group_layout,
         }
     }

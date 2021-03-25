@@ -1,7 +1,5 @@
-use crate::impls::graphics::matrix::generate_matrix;
 use crate::impls::graphics::prelude::*;
 use crate::resources::mesh::Vertex;
-use util::{BufferInitDescriptor, DeviceExt};
 use wgpu::*;
 
 pub struct LambertPipeline {
@@ -10,19 +8,8 @@ pub struct LambertPipeline {
 
 impl Pipeline for LambertPipeline {
     const NAME: &'static str = "Lambert";
-    const IS_SURFACE_PIPELINE: bool = true;
 
-    const INTERNAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry] =
-        &[BindGroupLayoutEntry {
-            binding: 0,
-            visibility: ShaderStage::VERTEX,
-            ty: BindingType::Buffer {
-                ty: BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: BufferSize::new(64),
-            },
-            count: None,
-        }];
+    const IS_SURFACE_PIPELINE: bool = true;
 
     const MATERIAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry] = &[
         BindGroupLayoutEntry {
@@ -63,6 +50,14 @@ impl Pipeline for LambertPipeline {
         ],
     }];
 
+    const PUSH_CONSTANT_RANGES: &'static [PushConstantRange] = &[
+        // mat4x4 - transform
+        PushConstantRange {
+            stages: ShaderStage::VERTEX,
+            range: (0..64),
+        },
+    ];
+
     #[inline]
     fn shader_pipeline(&self) -> &ShaderPipeline {
         &self.shader_pipeline
@@ -75,27 +70,9 @@ impl Pipeline for LambertPipeline {
             alpha_to_coverage_enabled: false,
         };
 
-        let mx_total = generate_matrix(
-            drivers.swap_chain_desc.width as f32 / drivers.swap_chain_desc.height as f32,
-        );
-
-        let mx_ref: &[f32; 16] = mx_total.as_ref();
-
-        let view_projection_buffer = drivers.device.create_buffer_init(&BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::cast_slice(mx_ref),
-            usage: BufferUsage::UNIFORM | BufferUsage::COPY_DST,
-        });
-
-        let internal_bind_group_entries = &[BindGroupEntry {
-            binding: 0,
-            resource: view_projection_buffer.as_entire_binding(),
-        }][..];
-
         let shader_pipeline = drivers.create_shader_pipeline::<Self>(ShaderPipelineDescriptor {
             depth_stencil: None,
             multi_sample_state,
-            internal_bind_group_entries,
         });
 
         Self { shader_pipeline }

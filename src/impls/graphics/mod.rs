@@ -273,6 +273,20 @@ impl Drivers {
         }
     }
 
+    pub const REQUIRED_DEVICE_FEATURES: Features = Features::PUSH_CONSTANTS;
+    pub const REQUIRED_DEVICE_LIMITS: Limits = Limits {
+        max_bind_groups: 4,
+        max_dynamic_uniform_buffers_per_pipeline_layout: 8,
+        max_dynamic_storage_buffers_per_pipeline_layout: 4,
+        max_sampled_textures_per_shader_stage: 16,
+        max_samplers_per_shader_stage: 16,
+        max_storage_buffers_per_shader_stage: 4,
+        max_storage_textures_per_shader_stage: 4,
+        max_uniform_buffers_per_shader_stage: 12,
+        max_uniform_buffer_binding_size: 16384,
+        max_push_constant_size: 256,
+    };
+
     async fn create_async_resources(
         instance: &Instance,
         surface: &Surface,
@@ -293,8 +307,8 @@ impl Drivers {
             .request_device(
                 &DeviceDescriptor {
                     label: None,
-                    features: Features::default(),
-                    limits: Limits::default(),
+                    features: Self::REQUIRED_DEVICE_FEATURES,
+                    limits: Self::REQUIRED_DEVICE_LIMITS,
                 },
                 None,
             )
