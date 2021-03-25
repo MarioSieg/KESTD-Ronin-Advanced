@@ -37,6 +37,20 @@ impl GraphicsSystem {
 
         CORRECTION_MATRIX * projection_matrix * view_matrix
     }
+
+    fn prepare_camera(
+        &self,
+        cam_component: Option<(&Transform, &Camera)>,
+        flag: &mut bool,
+    ) -> Matrix4<f32> {
+        if let Some(camera) = cam_component {
+            self.compute_camera(camera)
+        } else {
+            warn!("No camera found!");
+            *flag = false;
+            Matrix4::identity()
+        }
+    }
 }
 
 impl SubSystem for GraphicsSystem {
@@ -56,27 +70,23 @@ impl SubSystem for GraphicsSystem {
         let mut flag = true;
         let mut frame = self.drivers.begin_frame();
         {
+            let camera = <(&Transform, &Camera)>::query().iter(world).next();
+            let view_proj_matrix = self.prepare_camera(camera, &mut flag);
+
             let mut pass = frame.create_pass();
             pass.set_pipeline(&self.lambert_pipeline);
 
-            let camera = <(&Transform, &Camera)>::query().iter(world).next();
-            let view_proj_matrix = if let Some(camera) = camera {
-                self.compute_camera(camera)
-            } else {
-                flag = false;
-                warn!("No camera found!");
-                Matrix4::identity()
-            };
+            let mut query = <&mut Transform>::query();
+            query.par_for_each_mut(world, |transform| {
+                transform.update();
+            });
 
-            let mut query = <(&Transform, &MeshRenderer)>::query();
-            for (transform, renderer) in query.iter(world) {
-                let world_matrix = transform.compute_world();
-
+            let mut query = <(&mut Transform, &MeshRenderer)>::query();
+            query.for_each_mut(world, |(transform, renderer)| {
                 let push_constant_data = PushConstantData {
-                    world_matrix,
+                    world_matrix: transform.matrix,
                     view_proj_matrix,
                 };
-
                 pass.set_push_constans(
                     ShaderStage::VERTEX,
                     0,
@@ -84,7 +94,7 @@ impl SubSystem for GraphicsSystem {
                 );
                 pass.set_bind_group(0, renderer.material.bind_group());
                 pass.draw_indexed(&renderer.mesh);
-            }
+            });
         }
 
         frame.end();
