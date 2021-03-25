@@ -18,11 +18,7 @@ impl SubSystem for GraphicsSystem {
     type Args = WindowHandle;
 
     fn initialize(cfg: &mut CoreConfig, window: &Self::Args) -> Self {
-        let is_power_safe_mode = cfg.application_config.power_safe_mode;
-        let use_vsync = cfg.display_config.vsync;
-
         let drivers = Drivers::initialize(window, cfg);
-
         let lambert_pipeline = LambertPipeline::create(&drivers, cfg);
 
         Self {
