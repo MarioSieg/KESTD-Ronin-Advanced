@@ -15,6 +15,8 @@ pub struct AppConfig {
     pub safe_mode: bool,
     pub power_safe_mode: bool,
     pub default_resource_cache_capacity: usize,
+    pub disable_service_routine: bool,
+    pub service_routine_minute_interval: u8,
 }
 
 impl AppConfig {
@@ -24,13 +26,15 @@ impl AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            product_name: String::from("Untitled Product"),
-            product_company: String::from("Default Company"),
-            product_copyright: String::from("Default Copyright"),
-            product_description: String::from("Default Description"),
+            product_name: "Untitled Product".to_string(),
+            product_company: "Default Company".to_string(),
+            product_copyright: "Default Copyright".to_string(),
+            product_description: "Default Description".to_string(),
             safe_mode: false,
             power_safe_mode: false,
             default_resource_cache_capacity: 128,
+            disable_service_routine: false,
+            service_routine_minute_interval: 30,
         }
     }
 }
@@ -76,7 +80,7 @@ impl DisplayConfig {
 impl Default for DisplayConfig {
     fn default() -> Self {
         Self {
-            window_mode: WindowMode::FullScreen,
+            window_mode: WindowMode::Windowed,
             resolution: (1920, 1080),
             vsync: false,
             gamma_offset: 1.0,

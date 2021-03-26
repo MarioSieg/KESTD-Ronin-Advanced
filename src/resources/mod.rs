@@ -4,6 +4,7 @@ pub mod texture;
 
 use super::systems::SubSystem;
 use crate::resources::prelude::PathBuf;
+use log::info;
 use mesh::Mesh;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
@@ -62,21 +63,23 @@ impl<T: Resource> ResourceCache<T> {
     }
 
     pub fn load(&mut self, system: &T::ImportSystem, path: PathBuf) -> Arc<T> {
-        let id = {
+        let hash = {
             let mut hasher = DefaultHasher::new();
             path.hash(&mut hasher);
             hasher.finish()
         };
         // if resource is already loaded, just return the pointer
-        if let Some(ptr) = self.get(id) {
+        if let Some(ptr) = self.get(hash) {
+            info!("Reusing cached resource {:#X} = {:?}", hash, path);
             ptr.clone()
         } else {
             // else load the file and insert it:
+            info!("Importing and caching resource {:#X} = {:?}", hash, path);
             let bytes: Vec<u8> = std::fs::read(&path).unwrap_or_else(|_| {
                 panic!("Cache import error! Failed to read file: {:?}", path);
             });
             let ptr = Arc::new(T::load(system, bytes));
-            self.insert(id, ptr.clone());
+            self.insert(hash, ptr.clone());
             ptr
         }
     }

@@ -1,7 +1,9 @@
 use super::config::CoreConfig;
 use super::ecs::{self, World};
 use super::resources::ResourceManager;
+use super::service;
 use super::systems::SystemSupervisor;
+use clokwerk::{Interval, ScheduleHandle, Scheduler};
 use humantime::Duration;
 use log::*;
 use std::fs;
@@ -15,6 +17,7 @@ pub struct Engine {
     pub systems: SystemSupervisor,
     pub world: World,
     pub resource_manager: ResourceManager,
+    pub service_scheduler_thread: Option<ScheduleHandle>,
 }
 
 impl Engine {
@@ -138,6 +141,25 @@ impl Engine {
             config.application_config.default_resource_cache_capacity,
         );
 
+        let service_scheduler_thread = if !config.application_config.disable_service_routine {
+            let interval = config
+                .application_config
+                .service_routine_minute_interval
+                .clamp(1, 60) as u64;
+            info!(
+                "Starting service routine thread scheduler with interval of {} Minutes",
+                interval
+            );
+            let mut service_scheduler = Scheduler::new();
+            service_scheduler
+                .every(Interval::Minutes(interval as u32))
+                .run(service::service_routine);
+            Some(service_scheduler.watch_thread(std::time::Duration::new(interval, 0)))
+        } else {
+            warn!("Service routine is disabled! This is not recommended and might lead to system instability!");
+            None
+        };
+
         ecs::initialize_default_world(&systems, &mut world, &mut resource_manager);
 
         let this = Self {
@@ -145,6 +167,7 @@ impl Engine {
             systems,
             world,
             resource_manager,
+            service_scheduler_thread,
         };
 
         info!(
