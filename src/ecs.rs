@@ -1,4 +1,4 @@
-use crate::math::{Array, Deg, Matrix4, Quaternion, SquareMatrix, Vector3, Zero};
+use crate::math::{Array, Deg, Matrix4, Quaternion, Vector3, Zero};
 use crate::resources::{
     material::{Material, MaterialProperties},
     mesh::Mesh,
@@ -17,15 +17,14 @@ pub mod components {
         pub position: Vector3<f32>,
         pub rotation: Quaternion<f32>,
         pub scale: Vector3<f32>,
-        pub matrix: Matrix4<f32>,
     }
 
     impl Transform {
         #[inline]
-        pub fn update(&mut self) {
-            self.matrix = Matrix4::from_translation(self.position)
+        pub fn calculate_matrix(&self) -> Matrix4<f32> {
+            Matrix4::from_translation(self.position)
                 * Matrix4::from(self.rotation)
-                * Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, self.scale.z);
+                * Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, self.scale.z)
         }
     }
 
@@ -54,7 +53,6 @@ pub fn initialize_default_world(systems: &SystemSupervisor, world: &mut World) {
             position: Vector3::new(3.0, 0.0, 0.0),
             rotation: Quaternion::zero(),
             scale: Vector3::from_value(1.0),
-            matrix: Matrix4::identity(),
         },
         MeshRenderer {
             mesh: Mesh::load(&systems.graphics, PathBuf::from("db/meshes/cube.obj")),
@@ -75,7 +73,6 @@ pub fn initialize_default_world(systems: &SystemSupervisor, world: &mut World) {
             position: Vector3::new(0.0, 1.0, 0.0),
             rotation: Quaternion::zero(),
             scale: Vector3::from_value(1.0),
-            matrix: Matrix4::identity(),
         },
         MeshRenderer {
             mesh: Mesh::load(&systems.graphics, PathBuf::from("db/meshes/cube.obj")),
@@ -93,7 +90,6 @@ pub fn initialize_default_world(systems: &SystemSupervisor, world: &mut World) {
             position: Vector3::new(0.0, 0.0, 5.0),
             rotation: Quaternion::zero(),
             scale: Vector3::from_value(1.0),
-            matrix: Matrix4::identity(),
         },
         Camera {
             fov: Deg(75.0),
