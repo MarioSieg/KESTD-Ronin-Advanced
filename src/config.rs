@@ -14,6 +14,7 @@ pub struct AppConfig {
     pub product_description: String,
     pub safe_mode: bool,
     pub power_safe_mode: bool,
+    pub default_resource_cache_capacity: usize,
 }
 
 impl AppConfig {
@@ -29,6 +30,7 @@ impl Default for AppConfig {
             product_description: String::from("Default Description"),
             safe_mode: false,
             power_safe_mode: false,
+            default_resource_cache_capacity: 128,
         }
     }
 }
@@ -91,9 +93,20 @@ pub enum MsaaMode {
     X8 = 8,
 }
 
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+pub enum GraphicsApi {
+    Auto,
+    Direct3D11,
+    Direct3D12,
+    OpenGL,
+    Vulkan,
+    WebGPU,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct GraphicsConfig {
     pub msaa_mode: MsaaMode,
+    pub backend_api: GraphicsApi,
     pub max_bind_groups: u32,
     pub max_dynamic_uniform_buffers_per_pipeline_layout: u32,
     pub max_dynamic_storage_buffers_per_pipeline_layout: u32,
@@ -114,6 +127,7 @@ impl Default for GraphicsConfig {
     fn default() -> Self {
         Self {
             msaa_mode: MsaaMode::X8,
+            backend_api: GraphicsApi::Vulkan,
             max_bind_groups: 4,
             max_dynamic_uniform_buffers_per_pipeline_layout: 8,
             max_dynamic_storage_buffers_per_pipeline_layout: 4,

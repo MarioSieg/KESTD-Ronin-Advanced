@@ -1,5 +1,6 @@
 use super::config::CoreConfig;
 use super::ecs::{self, World};
+use super::resources::ResourceManager;
 use super::systems::SystemSupervisor;
 use humantime::Duration;
 use log::*;
@@ -13,6 +14,7 @@ pub struct Engine {
     pub config: CoreConfig,
     pub systems: SystemSupervisor,
     pub world: World,
+    pub resource_manager: ResourceManager,
 }
 
 impl Engine {
@@ -132,12 +134,17 @@ impl Engine {
         let mut config = CoreConfig::load();
         let systems = SystemSupervisor::initialize(&mut config);
         let mut world = World::default();
-        ecs::initialize_default_world(&systems, &mut world);
+        let mut resource_manager = ResourceManager::with_capacity(
+            config.application_config.default_resource_cache_capacity,
+        );
+
+        ecs::initialize_default_world(&systems, &mut world, &mut resource_manager);
 
         let this = Self {
             config,
             systems,
             world,
+            resource_manager,
         };
 
         info!(

@@ -2,8 +2,7 @@ use crate::math::{Array, Deg, Matrix4, Quaternion, Vector3, Zero};
 use crate::resources::{
     material::{Material, MaterialProperties},
     mesh::Mesh,
-    texture::Texture,
-    ResourceImporteur,
+    ResourceManager,
 };
 use std::sync::Arc;
 
@@ -45,9 +44,11 @@ pub mod components {
 use crate::systems::SystemSupervisor;
 use components::*;
 
-pub fn initialize_default_world(systems: &SystemSupervisor, world: &mut World) {
-    use std::path::PathBuf;
-
+pub fn initialize_default_world(
+    systems: &SystemSupervisor,
+    world: &mut World,
+    resource_manager: &mut ResourceManager,
+) {
     let cube1 = (
         Transform {
             position: Vector3::new(3.0, 0.0, 0.0),
@@ -55,14 +56,15 @@ pub fn initialize_default_world(systems: &SystemSupervisor, world: &mut World) {
             scale: Vector3::from_value(1.0),
         },
         MeshRenderer {
-            mesh: Mesh::load(&systems.graphics, PathBuf::from("db/meshes/cube.obj")),
+            mesh: resource_manager
+                .mesh_cache
+                .load_imm(&systems.graphics, "db/meshes/cube.obj"),
             material: Material::load(
                 &systems.graphics,
                 MaterialProperties::Lambert {
-                    albedo: Texture::load(
-                        &systems.graphics,
-                        PathBuf::from("db/textures/metal.png"),
-                    ),
+                    albedo: resource_manager
+                        .texture_cache
+                        .load_imm(&systems.graphics, "db/textures/metal.png"),
                 },
             ),
         },
@@ -75,11 +77,15 @@ pub fn initialize_default_world(systems: &SystemSupervisor, world: &mut World) {
             scale: Vector3::from_value(1.0),
         },
         MeshRenderer {
-            mesh: Mesh::load(&systems.graphics, PathBuf::from("db/meshes/cube.obj")),
+            mesh: resource_manager
+                .mesh_cache
+                .load_imm(&systems.graphics, "db/meshes/cube.obj"),
             material: Material::load(
                 &systems.graphics,
                 MaterialProperties::Lambert {
-                    albedo: Texture::load(&systems.graphics, PathBuf::from("db/textures/wood.png")),
+                    albedo: resource_manager
+                        .texture_cache
+                        .load_imm(&systems.graphics, "db/textures/wood.png"),
                 },
             ),
         },

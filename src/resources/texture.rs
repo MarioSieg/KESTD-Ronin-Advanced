@@ -1,10 +1,10 @@
 use super::prelude::*;
+use std::io::Cursor;
 use std::num::NonZeroU8;
 
 pub type Texel = u8;
 
 pub struct Texture {
-    path: PathBuf,
     width: u32,
     height: u32,
     texels: Box<[Texel]>,
@@ -51,23 +51,18 @@ impl Texture {
     }
 }
 
-impl ResourceImporteur for Texture {
+impl Resource for Texture {
     type ImportSystem = graphics::GraphicsSystem;
-    type MetaData = PathBuf;
 
-    #[inline]
-    fn meta_data(&self) -> &Self::MetaData {
-        &self.path
-    }
-
-    fn load(system: &Self::ImportSystem, path: Self::MetaData) -> Arc<Self> {
+    fn load(system: &Self::ImportSystem, raw_data: Vec<u8>) -> Self {
         use image::io::Reader as ImageReader;
         use wgpu::*;
 
-        let image = ImageReader::open(&path)
-            .unwrap()
+        let image = ImageReader::new(Cursor::new(raw_data))
+            .with_guessed_format()
+            .expect("Failed to guess format!")
             .decode()
-            .unwrap()
+            .expect("Failed to decode texture!")
             .flipv()
             .into_rgba8();
         let width = image.width();
@@ -135,8 +130,7 @@ impl ResourceImporteur for Texture {
             ..std::default::Default::default()
         });
 
-        Arc::new(Self {
-            path,
+        Self {
             width,
             height,
             texels,
@@ -144,6 +138,6 @@ impl ResourceImporteur for Texture {
             texture,
             view,
             sampler,
-        })
+        }
     }
 }

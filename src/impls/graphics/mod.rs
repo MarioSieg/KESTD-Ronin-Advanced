@@ -4,7 +4,7 @@ pub mod pipeline;
 pub mod pipelines;
 pub mod prelude;
 
-use crate::config::{CoreConfig, GraphicsConfig, MsaaMode};
+use crate::config::{CoreConfig, GraphicsApi, GraphicsConfig, MsaaMode};
 use crate::impls::graphics::prelude::Pipeline;
 use log::info;
 use pass::Pass;
@@ -92,7 +92,15 @@ impl Drivers {
     }
 
     pub fn initialize(window: &glfw::Window, config: &CoreConfig) -> Self {
-        let instance = Instance::new(BackendBit::VULKAN);
+        let backend_bit = match config.graphics_config.backend_api {
+            GraphicsApi::Auto => BackendBit::PRIMARY,
+            GraphicsApi::Direct3D11 => BackendBit::DX11,
+            GraphicsApi::Direct3D12 => BackendBit::DX12,
+            GraphicsApi::OpenGL => BackendBit::GL,
+            GraphicsApi::Vulkan => BackendBit::VULKAN,
+            GraphicsApi::WebGPU => BackendBit::BROWSER_WEBGPU,
+        };
+        let instance = Instance::new(backend_bit);
         let surface = unsafe { instance.create_surface(window) };
         let (adapter, device, queue) = futures::executor::block_on(Self::create_async_resources(
             &instance,

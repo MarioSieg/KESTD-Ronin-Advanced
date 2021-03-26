@@ -1,5 +1,6 @@
 use super::prelude::*;
 use super::texture::Texture;
+use crate::systems::graphics::GraphicsSystem;
 use wgpu::BindGroup;
 
 pub enum MaterialProperties {
@@ -21,18 +22,8 @@ impl Material {
     pub fn bind_group(&self) -> &BindGroup {
         &self.bind_group
     }
-}
 
-impl ResourceImporteur for Material {
-    type ImportSystem = graphics::GraphicsSystem;
-    type MetaData = MaterialProperties;
-
-    #[inline]
-    fn meta_data(&self) -> &Self::MetaData {
-        &self.properties
-    }
-
-    fn load(system: &Self::ImportSystem, properties: Self::MetaData) -> Arc<Self> {
+    pub fn load(system: &GraphicsSystem, properties: MaterialProperties) -> Arc<Self> {
         use wgpu::*;
 
         let bind_group = match &properties {

@@ -1,7 +1,6 @@
 use super::prelude::*;
 use bytemuck::{Pod, Zeroable};
-use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, Cursor};
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -32,7 +31,6 @@ impl Vertex {
 pub type Index = u16;
 
 pub struct Mesh {
-    path: PathBuf,
     indices: Box<[Index]>,
     vertices: Box<[Vertex]>,
     vertex_buffer: wgpu::Buffer,
@@ -61,22 +59,16 @@ impl Mesh {
     }
 }
 
-impl ResourceImporteur for Mesh {
+impl Resource for Mesh {
     type ImportSystem = graphics::GraphicsSystem;
-    type MetaData = PathBuf;
 
-    #[inline]
-    fn meta_data(&self) -> &Self::MetaData {
-        &self.path
-    }
-
-    fn load(system: &Self::ImportSystem, path: Self::MetaData) -> Arc<Self> {
+    fn load(system: &Self::ImportSystem, raw_data: Vec<u8>) -> Self {
         use obj::{load_obj, Obj, TexturedVertex};
         use rayon::iter::*;
         use wgpu::util::{BufferInitDescriptor, DeviceExt};
         use wgpu::*;
 
-        let input = BufReader::new(File::open(&path).unwrap());
+        let input = BufReader::new(Cursor::new(raw_data));
         let mesh: Obj<TexturedVertex> = load_obj(input).unwrap();
 
         let vertices: Vec<Vertex> = mesh
@@ -109,13 +101,12 @@ impl ResourceImporteur for Mesh {
                 usage: BufferUsage::INDEX,
             });
 
-        Arc::new(Self {
-            path,
+        Self {
             indices,
             vertices,
             vertex_buffer,
             index_buffer,
-        })
+        }
     }
 }
 
