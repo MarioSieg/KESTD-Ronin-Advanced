@@ -12,6 +12,9 @@ path = "src/lib.rs"
 name = "kestd"
 path = "src/bin.rs"
 
+[profile.dev]
+codegen-units = 512
+
 [profile.release]
 lto = "fat"
 codegen-units = 1

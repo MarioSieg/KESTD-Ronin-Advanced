@@ -96,9 +96,9 @@ impl Drivers {
             GraphicsApi::Auto => BackendBit::PRIMARY,
             GraphicsApi::Direct3D11 => BackendBit::DX11,
             GraphicsApi::Direct3D12 => BackendBit::DX12,
-            GraphicsApi::OpenGL => BackendBit::GL,
+            GraphicsApi::OpenGl => BackendBit::GL,
             GraphicsApi::Vulkan => BackendBit::VULKAN,
-            GraphicsApi::WebGPU => BackendBit::BROWSER_WEBGPU,
+            GraphicsApi::WebGpu => BackendBit::BROWSER_WEBGPU,
         };
         let instance = Instance::new(backend_bit);
         let surface = unsafe { instance.create_surface(window) };

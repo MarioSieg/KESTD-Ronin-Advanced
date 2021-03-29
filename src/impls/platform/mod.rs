@@ -16,11 +16,11 @@ pub struct WindowData {
 impl WindowData {
     pub fn create_window(cfg: &mut CoreConfig) -> WindowData {
         // create window:
-        let mut glfw = init(FAIL_ON_ERRORS).expect("Failed to initialize glfw context!");
+        let mut context = init(FAIL_ON_ERRORS).expect("Failed to initialize glfw context!");
 
         let mut gamma_ramps: Vec<(Vec<u16>, Vec<u16>, Vec<u16>)> = Vec::new();
 
-        glfw.with_connected_monitors_mut(|_, monitors| {
+        context.with_connected_monitors_mut(|_, monitors| {
             for (i, monitor) in monitors.iter().enumerate() {
                 info!("Monitor: {}", i + 1);
                 info!(
@@ -82,9 +82,9 @@ impl WindowData {
 
         const WIN_TITLE: &str = "KESTD Ronin Advanced - Simulation";
 
-        glfw.window_hint(WindowHint::ClientApi(ClientApiHint::NoApi));
-        glfw.window_hint(WindowHint::Resizable(false));
-        glfw.window_hint(WindowHint::Visible(false));
+        context.window_hint(WindowHint::ClientApi(ClientApiHint::NoApi));
+        context.window_hint(WindowHint::Resizable(false));
+        context.window_hint(WindowHint::Visible(false));
 
         fn make_windowed(
             glfw: &mut Glfw,
@@ -106,17 +106,17 @@ impl WindowData {
             } else {
                 None
             }
-        };
+        }
 
-        let (window, events) =
+        let (mut window, events) =
             if cfg.display_config.window_mode == crate::config::WindowMode::Windowed {
                 make_windowed(
-                    &mut glfw,
+                    &mut context,
                     &mut cfg.display_config.resolution.0,
                     &mut cfg.display_config.resolution.1,
                 )
             } else {
-                glfw.with_primary_monitor_mut(|mut ctx, monitor| {
+                context.with_primary_monitor_mut(|mut ctx, monitor| {
                     // if we fail to get the primary monitor, try windowed mode:
                     if monitor.is_none() {
                         make_windowed(
@@ -141,8 +141,12 @@ impl WindowData {
                 })
             }
             .expect("Failed to create window!");
+        window.set_char_polling(true);
+        window.set_mouse_button_polling(true);
+        window.set_cursor_pos_polling(true);
+        window.set_key_polling(true);
         WindowData {
-            context: glfw,
+            context,
             window,
             events,
         }

@@ -102,9 +102,9 @@ pub enum GraphicsApi {
     Auto,
     Direct3D11,
     Direct3D12,
-    OpenGL,
+    OpenGl,
     Vulkan,
-    WebGPU,
+    WebGpu,
 }
 
 #[derive(Serialize, Deserialize)]
