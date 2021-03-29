@@ -1,4 +1,4 @@
-use crate::math::{Array, Deg, Matrix4, Quaternion, Vector3, Zero};
+use crate::math::{Array, Deg, Matrix4, Quaternion, Vector3, Zero, SquareMatrix};
 use crate::resources::{
     material::{Material, MaterialProperties},
     mesh::Mesh,
@@ -62,12 +62,13 @@ pub mod components {
         pub position: Vector3<f32>,
         pub rotation: Quaternion<f32>,
         pub scale: Vector3<f32>,
+        pub matrix: Matrix4<f32>,
     }
 
     impl Transform {
         #[inline]
-        pub fn calculate_matrix(&self) -> Matrix4<f32> {
-            Matrix4::from_translation(self.position)
+        pub fn calculate_matrix(&mut self) {
+            self.matrix = Matrix4::from_translation(self.position)
                 * Matrix4::from(self.rotation)
                 * Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, self.scale.z)
         }
@@ -124,6 +125,7 @@ pub fn initialize_default_scenery(
             position: Vector3::new(0.0, 0.0, 5.0),
             rotation: Quaternion::zero(),
             scale: Vector3::from_value(1.0),
+            matrix: Matrix4::identity(),
         },
         Camera {
             fov: Deg(75.0),
@@ -135,11 +137,12 @@ pub fn initialize_default_scenery(
 
     scenery.world.push(camera);
 
-    let mut crystal = (
+    let mut tree = (
         Transform {
             position: Vector3::new(0.0, 0.0, 0.0),
             rotation: Quaternion::zero(),
             scale: Vector3::from_value(1.0),
+            matrix: Matrix4::identity(),
         },
         MeshRenderer {
             mesh: resource_manager
@@ -156,12 +159,12 @@ pub fn initialize_default_scenery(
         },
     );
 
-    for i in 0..32 {
-        for j in 0..32 {
-            crystal.0.position.x = j as f32;
-            crystal.0.position.z = i as f32;
-            crystal.0.scale = Vector3::from_value(0.25);
-            scenery.world.push(crystal.clone());
+    for i in 0..64 {
+        for j in 0..64 {
+            tree.0.position.x = j as f32;
+            tree.0.position.z = i as f32;
+            tree.0.scale = Vector3::from_value(0.25);
+            scenery.world.push(tree.clone());
         }
     }
 }
