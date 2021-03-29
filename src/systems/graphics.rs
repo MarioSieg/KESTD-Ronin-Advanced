@@ -1,21 +1,16 @@
 use super::prelude::*;
 use crate::ecs::components::{Camera, MeshRenderer, Transform};
-use crate::ecs::resources::{CursorPos, Key, KeyInputQueue, MouseButton, MouseInputQueue};
+use crate::ecs::resources::{KeyInputQueue, MouseInputQueue};
 use crate::ecs::IntoQuery;
-use crate::impls::graphics::matrix::CORRECTION_MATRIX;
 use crate::impls::graphics::prelude::*;
 use crate::impls::platform::prelude::WindowHandle;
-use crate::math::{
-    perspective, EuclideanSpace, InnerSpace, Matrix4, Point3, Rad, SquareMatrix, Vector3,
-};
-use bytemuck::{Pod, Zeroable};
-use cgmath::{Array, ElementWise, Vector2, VectorSpace};
+use crate::math::{Matrix4, SquareMatrix};
 use log::warn;
 use wgpu::ShaderStage;
 
 pub struct GraphicsSystem {
     pub drivers: Drivers,
-    pub lambert_pipeline: LambertPipeline,
+    pub lambert_pipeline: lambert::LambertPipeline,
 }
 
 impl GraphicsSystem {
@@ -25,71 +20,6 @@ impl GraphicsSystem {
         let height = self.drivers.swap_chain_desc.height as f32;
         width / height
     }
-
-    fn compute_camera(
-        &self,
-        camera_entity: (&mut Transform, &mut Camera),
-        cursor_pos: CursorPos,
-        key_queue: &KeyInputQueue,
-        mouse_queue: &MouseInputQueue,
-    ) -> Matrix4<f32> {
-        let trans: &mut Transform = camera_entity.0;
-        let cam: &mut Camera = camera_entity.1;
-
-        if mouse_queue.is_key_pressed(MouseButton::Button2) {
-            let dx = (cursor_pos.0 - cam.prev.x) / 300.0;
-            let dy = (cursor_pos.1 - cam.prev.y) / 300.0;
-
-            cam.smooth_angles = cam
-                .smooth_angles
-                .lerp(Vector2::new(dx, dy), 1.0 / cam.smoothness);
-
-            cam.angles.x -= dx + cam.smooth_angles.x;
-            cam.angles.y -= dy + cam.smooth_angles.y;
-            cam.angles.y = cam.angles.y.clamp(-cam.clamp_y, cam.clamp_y);
-
-            let x = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.sin();
-            let y = Rad(cam.angles.y).0.sin();
-            let z = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.cos();
-            cam.forward = Vector3::new(x, y, z).normalize();
-        }
-        cam.prev = Vector2::new(cursor_pos.0, cursor_pos.1);
-
-        let left = cam.forward.cross(Vector3::unit_y()).normalize();
-
-        let mut eye = trans.position;
-
-        if key_queue.is_key_pressed(Key::W) {
-            eye += Vector3::from_value(cam.speed).mul_element_wise(cam.forward);
-        }
-
-        if key_queue.is_key_pressed(Key::A) {
-            eye -= Vector3::from_value(cam.speed).mul_element_wise(left);
-        }
-
-        if key_queue.is_key_pressed(Key::S) {
-            eye -= Vector3::from_value(cam.speed).mul_element_wise(cam.forward);
-        }
-
-        if key_queue.is_key_pressed(Key::D) {
-            eye += Vector3::from_value(cam.speed).mul_element_wise(left);
-        }
-
-        let at = eye + cam.forward;
-
-        trans.position = eye;
-
-        let projection_matrix =
-            perspective(cam.fov, self.aspect_ratio(), cam.near_clip, cam.far_clip);
-
-        let view_matrix = Matrix4::look_at_rh(
-            Point3::from_vec(eye),
-            Point3::from_vec(at),
-            Vector3::unit_y(),
-        );
-
-        CORRECTION_MATRIX * projection_matrix * view_matrix
-    }
 }
 
 impl SubSystem for GraphicsSystem {
@@ -97,7 +27,7 @@ impl SubSystem for GraphicsSystem {
 
     fn initialize(cfg: &mut CoreConfig, window: &Self::Args) -> Self {
         let drivers = Drivers::initialize(window, cfg);
-        let lambert_pipeline = LambertPipeline::create(&drivers, cfg);
+        let lambert_pipeline = lambert::LambertPipeline::create(&drivers, cfg);
 
         Self {
             drivers,
@@ -116,7 +46,13 @@ impl SubSystem for GraphicsSystem {
                 let cursor_pos = *scenery.resources.get_mut_or_default();
                 let key_queue = scenery.resources.get::<KeyInputQueue>().unwrap();
                 let mouse_queue = scenery.resources.get::<MouseInputQueue>().unwrap();
-                self.compute_camera(camera, cursor_pos, &*key_queue, &*mouse_queue)
+                camera::compute_camera(
+                    self.aspect_ratio(),
+                    camera,
+                    cursor_pos,
+                    &*key_queue,
+                    &*mouse_queue,
+                )
             } else {
                 warn!("No camera found!");
                 flag = false;
@@ -129,7 +65,7 @@ impl SubSystem for GraphicsSystem {
             let mut query = <(&Transform, &MeshRenderer)>::query();
             query.for_each_mut(&mut scenery.world, |(transform, renderer)| {
                 let world_matrix = transform.calculate_matrix();
-                let push_constant_data = PushConstantData {
+                let push_constant_data = lambert::PushConstantData {
                     world_matrix,
                     view_proj_matrix,
                 };
@@ -147,12 +83,3 @@ impl SubSystem for GraphicsSystem {
         flag
     }
 }
-
-#[derive(Copy, Clone)]
-struct PushConstantData {
-    pub world_matrix: Matrix4<f32>,
-    pub view_proj_matrix: Matrix4<f32>,
-}
-
-unsafe impl Pod for PushConstantData {}
-unsafe impl Zeroable for PushConstantData {}

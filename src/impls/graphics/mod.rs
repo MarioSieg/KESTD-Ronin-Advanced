@@ -1,4 +1,4 @@
-pub mod matrix;
+pub mod camera;
 pub mod pass;
 pub mod pipeline;
 pub mod pipelines;

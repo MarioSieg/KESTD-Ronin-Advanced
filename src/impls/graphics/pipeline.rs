@@ -1,9 +1,11 @@
 use super::Drivers;
 use crate::config::CoreConfig;
+use bytemuck::{Pod, Zeroable};
 use smallvec::{smallvec, SmallVec};
 use wgpu::*;
 
 pub trait Pipeline {
+    type PushConstantData: Copy + Clone + Pod + Zeroable;
     const NAME: &'static str;
     const IS_SURFACE_PIPELINE: bool;
     const PER_MATERIAL_BIND_GROUP_LAYOUT_ENTRIES: &'static [BindGroupLayoutEntry];

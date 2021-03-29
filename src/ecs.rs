@@ -100,7 +100,7 @@ pub mod components {
                 near_clip: 0.1,
                 far_clip: 100.0,
                 clamp_y: 80.0,
-                smoothness: 1.0,
+                smoothness: 1.5,
                 speed: 0.01,
                 prev: Vector2::zero(),
                 angles: Vector2::zero(),

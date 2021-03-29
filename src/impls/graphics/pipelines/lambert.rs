@@ -1,12 +1,25 @@
 use crate::impls::graphics::prelude::*;
+use crate::math::Matrix4;
 use crate::resources::mesh::Vertex;
+use bytemuck::{Pod, Zeroable};
 use wgpu::*;
 
 pub struct LambertPipeline {
     pub shader_pipeline: ShaderPipeline,
 }
 
+#[derive(Copy, Clone)]
+pub struct PushConstantData {
+    pub world_matrix: Matrix4<f32>,
+    pub view_proj_matrix: Matrix4<f32>,
+}
+
+unsafe impl Pod for PushConstantData {}
+unsafe impl Zeroable for PushConstantData {}
+
 impl Pipeline for LambertPipeline {
+    type PushConstantData = PushConstantData;
+
     const NAME: &'static str = "Lambert";
 
     const IS_SURFACE_PIPELINE: bool = true;
