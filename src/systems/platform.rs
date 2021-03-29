@@ -1,5 +1,5 @@
 use super::prelude::*;
-use crate::ecs::resources::{KeyInput, KeyInputQueue, MouseInput, MouseInputQueue};
+use crate::ecs::resources::{CursorPos, KeyInputQueue, MouseInputQueue};
 use crate::impls::platform::prelude::*;
 use smallvec::SmallVec;
 
@@ -18,7 +18,10 @@ impl SubSystem for PlatformSystem {
         Self { win_data, sys_info }
     }
 
-    fn prepare(&mut self) {
+    fn prepare(&mut self, scenery: &mut Scenery) {
+        scenery.resources.insert(KeyInputQueue(SmallVec::new()));
+        scenery.resources.insert(MouseInputQueue(SmallVec::new()));
+        scenery.resources.insert(CursorPos(0.0, 0.0));
         self.win_data.window.focus();
         self.win_data.window.show();
     }
@@ -29,30 +32,28 @@ impl SubSystem for PlatformSystem {
             use WindowEvent::*;
 
             match event {
-                Key(key, _, action, modifier) => {
-                    let mut key_queue = scenery
-                        .resources
-                        .get_mut_or_insert(KeyInputQueue(SmallVec::new()));
-                    key_queue.0.push(KeyInput {
-                        key,
-                        action,
-                        modifier,
-                    });
+                Key(key, _, action, _) => {
+                    let mut key_queue = scenery.resources.get_mut::<KeyInputQueue>().unwrap();
+                    if action == Action::Press {
+                        key_queue.0.push(key);
+                    } else if action == Action::Release {
+                        key_queue.0.retain(|&mut x| x != key);
+                    }
                 }
-                MouseButton(button, action, modifier) => {
-                    let mut mouse_queue = scenery
-                        .resources
-                        .get_mut_or_insert(MouseInputQueue(SmallVec::new()));
-                    mouse_queue.0.push(MouseInput {
-                        button,
-                        action,
-                        modifier,
-                    })
+                MouseButton(button, action, _) => {
+                    let mut mouse_queue = scenery.resources.get_mut::<MouseInputQueue>().unwrap();
+                    mouse_queue.0.push(button);
+                    if action == Action::Press {
+                        mouse_queue.0.push(button);
+                    } else if action == Action::Release {
+                        mouse_queue.0.retain(|&mut x| x != button)
+                    }
                 }
                 CursorPos(x, y) => {
                     let mut cursor_pos = scenery
                         .resources
-                        .get_mut_or_insert(crate::ecs::resources::CursorPos(0.0, 0.0));
+                        .get_mut::<crate::ecs::resources::CursorPos>()
+                        .unwrap();
                     cursor_pos.0 = x as f32;
                     cursor_pos.1 = y as f32;
                 }

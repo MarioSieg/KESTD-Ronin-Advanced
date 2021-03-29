@@ -14,7 +14,7 @@ pub trait SubSystem {
     type Args;
 
     fn initialize(cfg: &mut CoreConfig, data: &Self::Args) -> Self;
-    fn prepare(&mut self) {}
+    fn prepare(&mut self, _scenery: &mut Scenery) {}
     fn tick(&mut self, _scenery: &mut Scenery) -> bool {
         true
     }
@@ -44,10 +44,10 @@ impl SystemSupervisor {
         }
     }
 
-    pub fn prepare_all(&mut self) {
-        self.platform.prepare();
-        self.memory.prepare();
-        self.graphics.prepare();
+    pub fn prepare_all(&mut self, scenery: &mut Scenery) {
+        self.platform.prepare(scenery);
+        self.memory.prepare(scenery);
+        self.graphics.prepare(scenery);
     }
 
     pub fn tick_all(&mut self, scenery: &mut Scenery) -> bool {

@@ -1,6 +1,6 @@
 use super::prelude::*;
 use crate::ecs::components::{Camera, MeshRenderer, Transform};
-use crate::ecs::resources::CursorPos;
+use crate::ecs::resources::{CursorPos, Key, KeyInputQueue};
 use crate::ecs::IntoQuery;
 use crate::impls::graphics::matrix::CORRECTION_MATRIX;
 use crate::impls::graphics::prelude::*;
@@ -9,7 +9,7 @@ use crate::math::{
     perspective, EuclideanSpace, InnerSpace, Matrix4, Point3, Rad, SquareMatrix, Vector3,
 };
 use bytemuck::{Pod, Zeroable};
-use cgmath::{Vector2, VectorSpace};
+use cgmath::{Array, ElementWise, Vector2, VectorSpace};
 use log::warn;
 use wgpu::ShaderStage;
 
@@ -28,10 +28,11 @@ impl GraphicsSystem {
 
     fn compute_camera(
         &self,
-        camera_entity: (&Transform, &mut Camera),
+        camera_entity: (&mut Transform, &mut Camera),
         cursor_pos: CursorPos,
+        key_queue: &KeyInputQueue,
     ) -> Matrix4<f32> {
-        let trans: &Transform = camera_entity.0;
+        let trans: &mut Transform = camera_entity.0;
         let cam: &mut Camera = camera_entity.1;
 
         let dx = (cursor_pos.0 - cam.prev.x) / 300.0;
@@ -51,13 +52,35 @@ impl GraphicsSystem {
         let z = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.cos();
 
         let forward = Vector3::new(x, y, z).normalize();
-        let at = trans.position + forward;
+        let left = forward.cross(Vector3::unit_y()).normalize();
+
+        let mut eye = trans.position;
+
+        if key_queue.is_key_pressed(Key::W) {
+            eye += Vector3::from_value(cam.speed).mul_element_wise(forward);
+        }
+
+        if key_queue.is_key_pressed(Key::A) {
+            eye -= Vector3::from_value(cam.speed).mul_element_wise(left);
+        }
+
+        if key_queue.is_key_pressed(Key::S) {
+            eye -= Vector3::from_value(cam.speed).mul_element_wise(forward);
+        }
+
+        if key_queue.is_key_pressed(Key::D) {
+            eye += Vector3::from_value(cam.speed).mul_element_wise(left);
+        }
+
+        let at = eye + forward;
+
+        trans.position = eye;
 
         let projection_matrix =
             perspective(cam.fov, self.aspect_ratio(), cam.near_clip, cam.far_clip);
 
         let view_matrix = Matrix4::look_at_rh(
-            Point3::from_vec(trans.position),
+            Point3::from_vec(eye),
             Point3::from_vec(at),
             Vector3::unit_y(),
         );
@@ -83,12 +106,13 @@ impl SubSystem for GraphicsSystem {
         let mut flag = true;
         let mut frame = self.drivers.begin_frame();
         {
-            let camera = <(&Transform, &mut Camera)>::query()
+            let camera = <(&mut Transform, &mut Camera)>::query()
                 .iter_mut(&mut scenery.world)
                 .next();
             let view_proj_matrix = if let Some(camera) = camera {
-                let cursor_pos = scenery.resources.get_mut_or_default();
-                self.compute_camera(camera, *cursor_pos)
+                let cursor_pos = *scenery.resources.get_mut_or_default();
+                let key_queue = scenery.resources.get::<KeyInputQueue>().unwrap();
+                self.compute_camera(camera, cursor_pos, &*key_queue)
             } else {
                 warn!("No camera found!");
                 flag = false;

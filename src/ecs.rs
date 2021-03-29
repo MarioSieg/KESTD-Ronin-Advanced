@@ -36,23 +36,15 @@ pub mod resources {
     pub struct CursorPos(pub f32, pub f32);
 
     #[derive(Clone, Debug)]
-    pub struct KeyInput {
-        pub key: Key,
-        pub action: Action,
-        pub modifier: Modifiers,
+    pub struct KeyInputQueue(pub SmallVec<[Key; 64]>);
+
+    impl KeyInputQueue {
+        pub fn is_key_pressed(&self, key: Key) -> bool {
+            self.0.contains(&key)
+        }
     }
 
-    #[derive(Clone, Debug)]
-    pub struct KeyInputQueue(pub SmallVec<[KeyInput; 64]>);
-
-    #[derive(Clone, Debug)]
-    pub struct MouseInput {
-        pub button: MouseButton,
-        pub action: Action,
-        pub modifier: Modifiers,
-    }
-
-    pub struct MouseInputQueue(pub SmallVec<[MouseInput; 8]>);
+    pub struct MouseInputQueue(pub SmallVec<[MouseButton; 8]>);
 }
 
 pub mod components {
@@ -88,6 +80,7 @@ pub mod components {
         pub far_clip: f32,
         pub clamp_y: f32,
         pub smoothness: f32,
+        pub speed: f32,
         pub prev: Vector2<f32>,
         pub angles: Vector2<f32>,
         pub smooth_angles: Vector2<f32>,
@@ -101,6 +94,7 @@ pub mod components {
                 far_clip: 100.0,
                 clamp_y: 80.0,
                 smoothness: 1.0,
+                speed: 0.01,
                 prev: Vector2::zero(),
                 angles: Vector2::zero(),
                 smooth_angles: Vector2::zero(),
