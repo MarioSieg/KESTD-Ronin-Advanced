@@ -160,6 +160,7 @@ impl Engine {
             None
         };
 
+        info!("Initializing default scenery...");
         ecs::initialize_default_scenery(&systems, &mut scenery, &mut resource_manager);
 
         let this = Self {

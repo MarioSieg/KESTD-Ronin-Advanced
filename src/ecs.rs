@@ -28,6 +28,33 @@ impl std::default::Default for Scenery {
     }
 }
 
+pub mod resources {
+    pub use crate::impls::platform::prelude::{Action, Key, Modifiers, MouseButton};
+    use smallvec::SmallVec;
+
+    #[derive(Copy, Clone, Debug)]
+    pub struct CursorPos(pub f32, pub f32);
+
+    #[derive(Clone, Debug)]
+    pub struct KeyInput {
+        pub key: Key,
+        pub action: Action,
+        pub modifier: Modifiers,
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct KeyInputQueue(pub SmallVec<[KeyInput; 64]>);
+
+    #[derive(Clone, Debug)]
+    pub struct MouseInput {
+        pub button: MouseButton,
+        pub action: Action,
+        pub modifier: Modifiers,
+    }
+
+    pub struct MouseInputQueue(pub SmallVec<[MouseInput; 8]>);
+}
+
 pub mod components {
     use super::*;
 
