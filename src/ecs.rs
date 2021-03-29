@@ -45,6 +45,12 @@ pub mod resources {
     }
 
     pub struct MouseInputQueue(pub SmallVec<[MouseButton; 8]>);
+
+    impl MouseInputQueue {
+        pub fn is_key_pressed(&self, button: MouseButton) -> bool {
+            self.0.contains(&button)
+        }
+    }
 }
 
 pub mod components {
@@ -84,6 +90,7 @@ pub mod components {
         pub prev: Vector2<f32>,
         pub angles: Vector2<f32>,
         pub smooth_angles: Vector2<f32>,
+        pub forward: Vector3<f32>,
     }
 
     impl Default for Camera {
@@ -98,6 +105,7 @@ pub mod components {
                 prev: Vector2::zero(),
                 angles: Vector2::zero(),
                 smooth_angles: Vector2::zero(),
+                forward: Vector3::zero(),
             }
         }
     }
