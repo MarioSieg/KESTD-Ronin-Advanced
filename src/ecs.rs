@@ -111,48 +111,6 @@ pub fn initialize_default_scenery(
     scenery: &mut Scenery,
     resource_manager: &mut ResourceManager,
 ) {
-    let cube1 = (
-        Transform {
-            position: Vector3::new(3.0, 0.0, 0.0),
-            rotation: Quaternion::zero(),
-            scale: Vector3::from_value(1.0),
-        },
-        MeshRenderer {
-            mesh: resource_manager
-                .mesh_cache
-                .load_imm(&systems.graphics, "db/meshes/cube.obj"),
-            material: Material::load(
-                &systems.graphics,
-                MaterialProperties::Lambert {
-                    albedo: resource_manager
-                        .texture_cache
-                        .load_imm(&systems.graphics, "db/textures/metal.png"),
-                },
-            ),
-        },
-    );
-
-    let cube2 = (
-        Transform {
-            position: Vector3::new(0.0, 1.0, 0.0),
-            rotation: Quaternion::zero(),
-            scale: Vector3::from_value(1.0),
-        },
-        MeshRenderer {
-            mesh: resource_manager
-                .mesh_cache
-                .load_imm(&systems.graphics, "db/meshes/cube.obj"),
-            material: Material::load(
-                &systems.graphics,
-                MaterialProperties::Lambert {
-                    albedo: resource_manager
-                        .texture_cache
-                        .load_imm(&systems.graphics, "db/textures/wood.png"),
-                },
-            ),
-        },
-    );
-
     let camera = (
         Transform {
             position: Vector3::new(0.0, 0.0, 5.0),
@@ -167,7 +125,35 @@ pub fn initialize_default_scenery(
         },
     );
 
-    scenery.world.push(cube1);
-    scenery.world.push(cube2);
     scenery.world.push(camera);
+
+    let mut crystal = (
+        Transform {
+            position: Vector3::new(0.0, 0.0, 0.0),
+            rotation: Quaternion::zero(),
+            scale: Vector3::from_value(1.0),
+        },
+        MeshRenderer {
+            mesh: resource_manager
+                .mesh_cache
+                .load_imm(&systems.graphics, "db/meshes/tree.obj"),
+            material: Material::load(
+                &systems.graphics,
+                MaterialProperties::Lambert {
+                    albedo: resource_manager
+                        .texture_cache
+                        .load_imm(&systems.graphics, "db/textures/tree.png"),
+                },
+            ),
+        },
+    );
+
+    for i in 0..32 {
+        for j in 0..32 {
+            crystal.0.position.x = j as f32;
+            crystal.0.position.z = i as f32;
+            crystal.0.scale = Vector3::from_value(0.25);
+            scenery.world.push(crystal.clone());
+        }
+    }
 }
