@@ -62,14 +62,9 @@ impl SubSystem for GraphicsSystem {
             let mut pass = frame.create_pass(true);
             pass.set_pipeline(&self.lambert_pipeline);
 
-            let mut matrix_query = <&mut Transform>::query();
-            matrix_query.par_for_each_mut(&mut scenery.world, |transform| {
-               transform.calculate_matrix();
-            });
-
             let mut render_query = <(&Transform, &MeshRenderer)>::query();
             render_query.for_each(&scenery.world, |(transform, renderer)| {
-                let world_matrix = transform.matrix;
+                let world_matrix = transform.calculate_matrix();
                 let push_constant_data = lambert::PushConstantData {
                     world_matrix,
                     view_proj_matrix,
