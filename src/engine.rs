@@ -1,5 +1,5 @@
 use super::config::CoreConfig;
-use super::ecs::{self, World};
+use super::ecs::{self, Scenery};
 use super::resources::ResourceManager;
 use super::service;
 use super::systems::SystemSupervisor;
@@ -15,7 +15,7 @@ use std::time::Instant;
 pub struct Engine {
     pub config: CoreConfig,
     pub systems: SystemSupervisor,
-    pub world: World,
+    pub scenery: Scenery,
     pub resource_manager: ResourceManager,
     pub service_scheduler_thread: Option<ScheduleHandle>,
 }
@@ -136,7 +136,7 @@ impl Engine {
 
         let mut config = CoreConfig::load();
         let systems = SystemSupervisor::initialize(&mut config);
-        let mut world = World::default();
+        let mut scenery = Scenery::default();
         let mut resource_manager = ResourceManager::with_capacity(
             config.application_config.default_resource_cache_capacity,
         );
@@ -160,12 +160,12 @@ impl Engine {
             None
         };
 
-        ecs::initialize_default_world(&systems, &mut world, &mut resource_manager);
+        ecs::initialize_default_scenery(&systems, &mut scenery, &mut resource_manager);
 
         let this = Self {
             config,
             systems,
-            world,
+            scenery,
             resource_manager,
             service_scheduler_thread,
         };
@@ -200,7 +200,7 @@ impl Engine {
     pub fn shutdown(&mut self) {}
 
     fn tick(&mut self) -> bool {
-        self.systems.tick_all(&mut self.world)
+        self.systems.tick_all(&mut self.scenery)
     }
 }
 

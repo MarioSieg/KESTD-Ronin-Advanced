@@ -66,18 +66,18 @@ impl SubSystem for GraphicsSystem {
         }
     }
 
-    fn tick(&mut self, world: &mut World) -> bool {
+    fn tick(&mut self, scenery: &mut Scenery) -> bool {
         let mut flag = true;
         let mut frame = self.drivers.begin_frame();
         {
-            let camera = <(&Transform, &Camera)>::query().iter(world).next();
+            let camera = <(&Transform, &Camera)>::query().iter(&scenery.world).next();
             let view_proj_matrix = self.prepare_camera(camera, &mut flag);
 
             let mut pass = frame.create_pass();
             pass.set_pipeline(&self.lambert_pipeline);
 
             let mut query = <(&Transform, &MeshRenderer)>::query();
-            query.for_each_mut(world, |(transform, renderer)| {
+            query.for_each_mut(&mut scenery.world, |(transform, renderer)| {
                 let world_matrix = transform.calculate_matrix();
                 let push_constant_data = PushConstantData {
                     world_matrix,

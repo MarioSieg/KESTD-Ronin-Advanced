@@ -8,6 +8,26 @@ use std::sync::Arc;
 
 pub use legion::*;
 
+pub struct Scenery {
+    pub world: World,
+    pub resources: Resources,
+}
+
+impl Scenery {
+    pub fn new() -> Self {
+        Self {
+            world: World::default(),
+            resources: Resources::default(),
+        }
+    }
+}
+
+impl std::default::Default for Scenery {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub mod components {
     use super::*;
 
@@ -44,9 +64,9 @@ pub mod components {
 use crate::systems::SystemSupervisor;
 use components::*;
 
-pub fn initialize_default_world(
+pub fn initialize_default_scenery(
     systems: &SystemSupervisor,
-    world: &mut World,
+    scenery: &mut Scenery,
     resource_manager: &mut ResourceManager,
 ) {
     let cube1 = (
@@ -104,7 +124,7 @@ pub fn initialize_default_world(
         },
     );
 
-    world.push(cube1);
-    world.push(cube2);
-    world.push(camera);
+    scenery.world.push(cube1);
+    scenery.world.push(cube2);
+    scenery.world.push(camera);
 }

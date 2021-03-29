@@ -51,7 +51,7 @@ impl SubSystem for PlatformSystem {
         self.win_data.window.show();
     }
 
-    fn tick(&mut self, _world: &mut World) -> bool {
+    fn tick(&mut self, _scenery: &mut Scenery) -> bool {
         self.input_keys_state.clear();
         self.input_mouse_state.clear();
         self.win_data.context.poll_events();
