@@ -86,8 +86,11 @@ pub mod components {
         pub fov: Deg<f32>,
         pub near_clip: f32,
         pub far_clip: f32,
+        pub clamp_y: f32,
+        pub smoothness: f32,
         pub prev: Vector2<f32>,
         pub angles: Vector2<f32>,
+        pub smooth_angles: Vector2<f32>,
     }
 
     impl Default for Camera {
@@ -96,8 +99,11 @@ pub mod components {
                 fov: Deg(75.0),
                 near_clip: 0.1,
                 far_clip: 100.0,
+                clamp_y: 80.0,
+                smoothness: 1.0,
                 prev: Vector2::zero(),
                 angles: Vector2::zero(),
+                smooth_angles: Vector2::zero(),
             }
         }
     }

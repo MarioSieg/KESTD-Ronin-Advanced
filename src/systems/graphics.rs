@@ -9,7 +9,7 @@ use crate::math::{
     perspective, EuclideanSpace, InnerSpace, Matrix4, Point3, Rad, SquareMatrix, Vector3,
 };
 use bytemuck::{Pod, Zeroable};
-use cgmath::Vector2;
+use cgmath::{Vector2, VectorSpace};
 use log::warn;
 use wgpu::ShaderStage;
 
@@ -34,13 +34,17 @@ impl GraphicsSystem {
         let trans: &Transform = camera_entity.0;
         let cam: &mut Camera = camera_entity.1;
 
-        let dx = (cursor_pos.0 - cam.prev.x) / 100.0;
-        let dy = (cursor_pos.1 - cam.prev.y) / 100.0;
-
+        let dx = (cursor_pos.0 - cam.prev.x) / 300.0;
+        let dy = (cursor_pos.1 - cam.prev.y) / 300.0;
         cam.prev = Vector2::new(cursor_pos.0, cursor_pos.1);
 
-        cam.angles.x -= dx;
-        cam.angles.y += dy;
+        cam.smooth_angles = cam
+            .smooth_angles
+            .lerp(Vector2::new(dx, dy), 1.0 / cam.smoothness);
+
+        cam.angles.x -= dx + cam.smooth_angles.x;
+        cam.angles.y += dy + cam.smooth_angles.y;
+        cam.angles.y = cam.angles.y.clamp(-cam.clamp_y, cam.clamp_y);
 
         let x = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.sin();
         let y = Rad(cam.angles.y).0.sin();
