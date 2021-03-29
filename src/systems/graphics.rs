@@ -1,11 +1,15 @@
 use super::prelude::*;
 use crate::ecs::components::{Camera, MeshRenderer, Transform};
+use crate::ecs::resources::CursorPos;
 use crate::ecs::IntoQuery;
 use crate::impls::graphics::matrix::CORRECTION_MATRIX;
 use crate::impls::graphics::prelude::*;
 use crate::impls::platform::prelude::WindowHandle;
-use crate::math::{perspective, EuclideanSpace, Matrix4, Point3, SquareMatrix, Vector3};
+use crate::math::{
+    perspective, EuclideanSpace, InnerSpace, Matrix4, Point3, Rad, SquareMatrix, Vector3,
+};
 use bytemuck::{Pod, Zeroable};
+use cgmath::Vector2;
 use log::warn;
 use wgpu::ShaderStage;
 
@@ -22,34 +26,39 @@ impl GraphicsSystem {
         width / height
     }
 
-    fn compute_camera(&self, camera_entity: (&Transform, &Camera)) -> Matrix4<f32> {
-        let trans = camera_entity.0;
-        let cam = camera_entity.1;
+    fn compute_camera(
+        &self,
+        camera_entity: (&Transform, &mut Camera),
+        cursor_pos: CursorPos,
+    ) -> Matrix4<f32> {
+        let trans: &Transform = camera_entity.0;
+        let cam: &mut Camera = camera_entity.1;
+
+        let dx = (cursor_pos.0 - cam.prev.x) / 100.0;
+        let dy = (cursor_pos.1 - cam.prev.y) / 100.0;
+
+        cam.prev = Vector2::new(cursor_pos.0, cursor_pos.1);
+
+        cam.angles.x -= dx;
+        cam.angles.y += dy;
+
+        let x = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.sin();
+        let y = Rad(cam.angles.y).0.sin();
+        let z = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.cos();
+
+        let forward = Vector3::new(x, y, z).normalize();
+        let at = trans.position + forward;
 
         let projection_matrix =
             perspective(cam.fov, self.aspect_ratio(), cam.near_clip, cam.far_clip);
 
         let view_matrix = Matrix4::look_at_rh(
             Point3::from_vec(trans.position),
-            Point3::new(0.0, 0.0, 0.0),
+            Point3::from_vec(at),
             Vector3::unit_y(),
         );
 
         CORRECTION_MATRIX * projection_matrix * view_matrix
-    }
-
-    fn prepare_camera(
-        &self,
-        cam_component: Option<(&Transform, &Camera)>,
-        flag: &mut bool,
-    ) -> Matrix4<f32> {
-        if let Some(camera) = cam_component {
-            self.compute_camera(camera)
-        } else {
-            warn!("No camera found!");
-            *flag = false;
-            Matrix4::identity()
-        }
     }
 }
 
@@ -70,8 +79,17 @@ impl SubSystem for GraphicsSystem {
         let mut flag = true;
         let mut frame = self.drivers.begin_frame();
         {
-            let camera = <(&Transform, &Camera)>::query().iter(&scenery.world).next();
-            let view_proj_matrix = self.prepare_camera(camera, &mut flag);
+            let camera = <(&Transform, &mut Camera)>::query()
+                .iter_mut(&mut scenery.world)
+                .next();
+            let view_proj_matrix = if let Some(camera) = camera {
+                let cursor_pos = scenery.resources.get_mut_or_default();
+                self.compute_camera(camera, *cursor_pos)
+            } else {
+                warn!("No camera found!");
+                flag = false;
+                Matrix4::identity()
+            };
 
             let mut pass = frame.create_pass();
             pass.set_pipeline(&self.lambert_pipeline);

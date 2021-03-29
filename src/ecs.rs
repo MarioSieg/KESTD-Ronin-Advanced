@@ -32,7 +32,7 @@ pub mod resources {
     pub use crate::impls::platform::prelude::{Action, Key, Modifiers, MouseButton};
     use smallvec::SmallVec;
 
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Default, Copy, Clone, Debug)]
     pub struct CursorPos(pub f32, pub f32);
 
     #[derive(Clone, Debug)]
@@ -57,6 +57,7 @@ pub mod resources {
 
 pub mod components {
     use super::*;
+    use crate::math::Vector2;
 
     #[derive(Clone)]
     pub struct Transform {
@@ -85,6 +86,20 @@ pub mod components {
         pub fov: Deg<f32>,
         pub near_clip: f32,
         pub far_clip: f32,
+        pub prev: Vector2<f32>,
+        pub angles: Vector2<f32>,
+    }
+
+    impl Default for Camera {
+        fn default() -> Self {
+            Self {
+                fov: Deg(75.0),
+                near_clip: 0.1,
+                far_clip: 100.0,
+                prev: Vector2::zero(),
+                angles: Vector2::zero(),
+            }
+        }
     }
 }
 
@@ -148,6 +163,7 @@ pub fn initialize_default_scenery(
             fov: Deg(75.0),
             near_clip: 0.1,
             far_clip: 100.0,
+            ..Default::default()
         },
     );
 
