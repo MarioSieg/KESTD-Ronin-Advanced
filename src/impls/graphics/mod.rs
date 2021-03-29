@@ -21,6 +21,7 @@ pub struct Drivers {
     pub swap_chain_desc: SwapChainDescriptor,
     pub swap_chain_format: TextureFormat,
     pub frame_buffer: TextureView,
+    pub depth_texture: TextureView,
     pub msaa_samples: MsaaMode,
     blit_shader: (ShaderModule, ShaderModule),
 }
@@ -30,11 +31,12 @@ pub struct Frame<'a> {
     pub encoder: CommandEncoder,
     pub queue: &'a Queue,
     pub frame_buf: &'a TextureView,
+    pub depth_stencil: &'a TextureView,
     samples: MsaaMode,
 }
 
 impl<'a> Frame<'a> {
-    pub fn create_pass(&mut self) -> Pass {
+    pub fn create_pass(&mut self, use_depth_stencil: bool) -> Pass {
         let ops = Operations {
             load: LoadOp::Clear(Color::WHITE),
             store: true,
@@ -55,7 +57,18 @@ impl<'a> Frame<'a> {
         let render_pass = self.encoder.begin_render_pass(&RenderPassDescriptor {
             label: None,
             color_attachments: &[color_attachment],
-            depth_stencil_attachment: None,
+            depth_stencil_attachment: if use_depth_stencil {
+                Some(RenderPassDepthStencilAttachmentDescriptor {
+                    attachment: &self.depth_stencil,
+                    depth_ops: Some(Operations {
+                        load: LoadOp::Clear(1.0),
+                        store: false,
+                    }),
+                    stencil_ops: None,
+                })
+            } else {
+                None
+            },
         });
         Pass(render_pass)
     }
@@ -87,6 +100,7 @@ impl Drivers {
             encoder,
             queue: &self.queue,
             frame_buf: &self.frame_buffer,
+            depth_stencil: &self.depth_texture,
             samples: self.msaa_samples,
         }
     }
@@ -150,6 +164,22 @@ impl Drivers {
             config.graphics_config.msaa_mode as u32,
         );
 
+        let depth_texture = device
+            .create_texture(&TextureDescriptor {
+                size: Extent3d {
+                    width: swap_chain_desc.width,
+                    height: swap_chain_desc.height,
+                    depth: 1,
+                },
+                mip_level_count: 1,
+                sample_count: config.graphics_config.msaa_mode as u32,
+                dimension: TextureDimension::D2,
+                format: Self::DEPTH_FORMAT,
+                usage: TextureUsage::RENDER_ATTACHMENT,
+                label: None,
+            })
+            .create_view(&TextureViewDescriptor::default());
+
         let vs_bytecode_path = "db/shaders/mipgen/final/blit.vert.spv";
         let fs_bytecode_path = "db/shaders/mipgen/final/blit.frag.spv";
 
@@ -183,6 +213,7 @@ impl Drivers {
             swap_chain_desc,
             swap_chain_format,
             frame_buffer,
+            depth_texture,
             msaa_samples: config.graphics_config.msaa_mode,
             blit_shader,
         }
@@ -281,6 +312,7 @@ impl Drivers {
     }
 
     pub const REQUIRED_DEVICE_FEATURES: Features = Features::PUSH_CONSTANTS;
+    pub const DEPTH_FORMAT: TextureFormat = TextureFormat::Depth32Float;
 
     async fn create_async_resources(
         instance: &Instance,

@@ -10,6 +10,7 @@ pub trait Pipeline {
     const PRIMITIVE_STATE: PrimitiveState;
     const VERTEX_BUFFER_LAYOUTS: &'static [VertexBufferLayout<'static>];
     const PUSH_CONSTANT_RANGES: &'static [PushConstantRange];
+    const DEPTH_STENCIL_STATE: Option<DepthStencilState>;
 
     fn shader_pipeline(&self) -> &ShaderPipeline;
     fn create(_drivers: &Drivers, _config: &CoreConfig) -> Self;
@@ -25,7 +26,6 @@ pub struct ShaderPipeline {
 }
 
 pub struct ShaderPipelineDescriptor {
-    pub depth_stencil: Option<DepthStencilState>,
     pub multi_sample_state: MultisampleState,
 }
 
@@ -91,7 +91,7 @@ impl ShaderPipeline {
                     targets: &fs_targets[..],
                 }),
                 primitive: T::PRIMITIVE_STATE,
-                depth_stencil: desc.depth_stencil,
+                depth_stencil: T::DEPTH_STENCIL_STATE,
                 multisample: desc.multi_sample_state,
             });
 

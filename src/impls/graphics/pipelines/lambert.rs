@@ -58,6 +58,24 @@ impl Pipeline for LambertPipeline {
         },
     ];
 
+    const DEPTH_STENCIL_STATE: Option<DepthStencilState> = Some(DepthStencilState {
+        format: Drivers::DEPTH_FORMAT,
+        depth_write_enabled: true,
+        depth_compare: CompareFunction::Less,
+        stencil: StencilState {
+            front: StencilFaceState::IGNORE,
+            back: StencilFaceState::IGNORE,
+            write_mask: 0,
+            read_mask: 0,
+        },
+        bias: DepthBiasState {
+            constant: 0,
+            slope_scale: 0.0,
+            clamp: 0.0,
+        },
+        clamp_depth: false,
+    });
+
     #[inline]
     fn shader_pipeline(&self) -> &ShaderPipeline {
         &self.shader_pipeline
@@ -70,10 +88,8 @@ impl Pipeline for LambertPipeline {
             alpha_to_coverage_enabled: false,
         };
 
-        let shader_pipeline = drivers.create_shader_pipeline::<Self>(ShaderPipelineDescriptor {
-            depth_stencil: None,
-            multi_sample_state,
-        });
+        let shader_pipeline =
+            drivers.create_shader_pipeline::<Self>(ShaderPipelineDescriptor { multi_sample_state });
 
         Self { shader_pipeline }
     }

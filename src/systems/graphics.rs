@@ -119,7 +119,7 @@ impl SubSystem for GraphicsSystem {
                 Matrix4::identity()
             };
 
-            let mut pass = frame.create_pass();
+            let mut pass = frame.create_pass(true);
             pass.set_pipeline(&self.lambert_pipeline);
 
             let mut query = <(&Transform, &MeshRenderer)>::query();
