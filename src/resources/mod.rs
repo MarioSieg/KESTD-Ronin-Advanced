@@ -58,11 +58,7 @@ impl<T: Resource> ResourceCache<T> {
         self.0.insert(k, v);
     }
 
-    pub fn load_imm(&mut self, system: &T::ImportSystem, path: &str) -> Arc<T> {
-        self.load(system, PathBuf::from(path))
-    }
-
-    pub fn load(&mut self, system: &T::ImportSystem, path: PathBuf) -> Arc<T> {
+    pub fn import(&mut self, system: &T::ImportSystem, path: PathBuf) -> Arc<T> {
         let hash = {
             let mut hasher = DefaultHasher::new();
             path.hash(&mut hasher);

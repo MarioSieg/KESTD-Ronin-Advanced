@@ -1,21 +1,23 @@
-use crate::ecs::components::{Camera, Transform};
-use crate::ecs::resources::{CursorPos, Key, KeyInputQueue, MouseButton, MouseInputQueue};
+use crate::components::{Camera, Transform};
+use crate::ecs::resources::{
+    CursorPos, Key, KeyInputStateCollection, MouseButton, MouseInputStateCollection,
+};
 use crate::math::{
     perspective, Array, ElementWise, EuclideanSpace, InnerSpace, Matrix4, Point3, Rad, Vector2,
-    Vector3, VectorSpace,
+    Vector3, VectorSpace, Zero,
 };
 
 pub fn compute_camera(
     aspect_ratio: f32,
     camera_entity: (&mut Transform, &mut Camera),
     cursor_pos: CursorPos,
-    key_queue: &KeyInputQueue,
-    mouse_queue: &MouseInputQueue,
+    key_state: &KeyInputStateCollection,
+    mouse_state: &MouseInputStateCollection,
 ) -> Matrix4<f32> {
     let trans: &mut Transform = camera_entity.0;
     let cam: &mut Camera = camera_entity.1;
 
-    if mouse_queue.is_key_pressed(MouseButton::Button2) {
+    if mouse_state.is_key_pressed(MouseButton::Button2) || cam.prev.is_zero() {
         let dx = (cursor_pos.0 - cam.prev.x) / 300.0;
         let dy = (cursor_pos.1 - cam.prev.y) / 300.0;
 
@@ -35,22 +37,21 @@ pub fn compute_camera(
     cam.prev = Vector2::new(cursor_pos.0, cursor_pos.1);
 
     let left = cam.forward.cross(Vector3::unit_y()).normalize();
-
     let mut eye = trans.position;
 
-    if key_queue.is_key_pressed(Key::W) {
+    if key_state.is_key_pressed(Key::W) {
         eye += Vector3::from_value(cam.speed).mul_element_wise(cam.forward);
     }
 
-    if key_queue.is_key_pressed(Key::A) {
+    if key_state.is_key_pressed(Key::A) {
         eye -= Vector3::from_value(cam.speed).mul_element_wise(left);
     }
 
-    if key_queue.is_key_pressed(Key::S) {
+    if key_state.is_key_pressed(Key::S) {
         eye -= Vector3::from_value(cam.speed).mul_element_wise(cam.forward);
     }
 
-    if key_queue.is_key_pressed(Key::D) {
+    if key_state.is_key_pressed(Key::D) {
         eye += Vector3::from_value(cam.speed).mul_element_wise(left);
     }
 

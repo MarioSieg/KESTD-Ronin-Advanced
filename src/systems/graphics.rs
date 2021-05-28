@@ -1,6 +1,6 @@
 use super::prelude::*;
-use crate::ecs::components::{Camera, MeshRenderer, Transform};
-use crate::ecs::resources::{KeyInputQueue, MouseInputQueue};
+use crate::components::{Camera, MeshRenderer, Transform};
+use crate::ecs::resources::{KeyInputStateCollection, MouseInputStateCollection};
 use crate::ecs::IntoQuery;
 use crate::impls::graphics::prelude::*;
 use crate::impls::platform::prelude::WindowHandle;
@@ -26,8 +26,8 @@ impl SubSystem for GraphicsSystem {
     type Args = WindowHandle;
 
     fn initialize(cfg: &mut CoreConfig, window: &Self::Args) -> Self {
-        let drivers = Drivers::initialize(window, cfg);
-        let lambert_pipeline = lambert::LambertPipeline::create(&drivers, cfg);
+        let mut drivers = Drivers::initialize(window, cfg);
+        let lambert_pipeline = lambert::LambertPipeline::create(&mut drivers, cfg);
 
         Self {
             drivers,
@@ -44,8 +44,11 @@ impl SubSystem for GraphicsSystem {
                 .next();
             let view_proj_matrix = if let Some(camera) = camera {
                 let cursor_pos = *scenery.resources.get_mut_or_default();
-                let key_queue = scenery.resources.get::<KeyInputQueue>().unwrap();
-                let mouse_queue = scenery.resources.get::<MouseInputQueue>().unwrap();
+                let key_queue = scenery.resources.get::<KeyInputStateCollection>().unwrap();
+                let mouse_queue = scenery
+                    .resources
+                    .get::<MouseInputStateCollection>()
+                    .unwrap();
                 camera::compute_camera(
                     self.aspect_ratio(),
                     camera,

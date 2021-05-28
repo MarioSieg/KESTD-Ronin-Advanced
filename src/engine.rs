@@ -160,8 +160,13 @@ impl Engine {
             None
         };
 
-        info!("Initializing default scenery...");
+        info!("Initializing scenery...");
+        let scenery_clock = Instant::now();
         ecs::initialize_default_scenery(&systems, &mut scenery, &mut resource_manager);
+        info!(
+            "Scenery is initialized! Time: {}",
+            Duration::from(scenery_clock.elapsed())
+        );
 
         let this = Self {
             config,
@@ -198,7 +203,9 @@ impl Engine {
         cycles
     }
 
-    pub fn shutdown(&mut self) {}
+    pub fn shutdown(&mut self) {
+        println!("Shutting down simulation system...");
+    }
 
     fn tick(&mut self) -> bool {
         self.systems.tick_all(&mut self.scenery)

@@ -9,6 +9,7 @@ use crate::impls::graphics::prelude::Pipeline;
 use log::info;
 use pass::Pass;
 use pipeline::{ShaderPipeline, ShaderPipelineDescriptor};
+use shaderc::Compiler as ShaderCompiler;
 use wgpu::*;
 
 pub struct Drivers {
@@ -23,6 +24,7 @@ pub struct Drivers {
     pub frame_buffer: TextureView,
     pub depth_texture: TextureView,
     pub msaa_samples: MsaaMode,
+    pub shader_compiler: ShaderCompiler,
     blit_shader: (ShaderModule, ShaderModule),
 }
 
@@ -80,7 +82,7 @@ impl<'a> Frame<'a> {
 
 impl Drivers {
     pub fn create_shader_pipeline<T: Pipeline>(
-        &self,
+        &mut self,
         desc: ShaderPipelineDescriptor,
     ) -> ShaderPipeline {
         ShaderPipeline::create_shader_bundle::<T>(self, desc)
@@ -203,6 +205,8 @@ impl Drivers {
         let fs_module = device.create_shader_module(&fs_module_desc);
         let blit_shader = (vs_module, fs_module);
 
+        let shader_compiler = shaderc::Compiler::new().expect("Failed to create shader compiler!");
+
         Self {
             instance,
             surface,
@@ -215,6 +219,7 @@ impl Drivers {
             frame_buffer,
             depth_texture,
             msaa_samples: config.graphics_config.msaa_mode,
+            shader_compiler,
             blit_shader,
         }
     }
