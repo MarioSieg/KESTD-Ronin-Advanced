@@ -114,6 +114,7 @@ pub fn initialize_default_scenery(
             fov: Deg(75.0),
             near_clip: 0.1,
             far_clip: 100.0,
+            clamp_y: 1.2,
             ..Default::default()
         },
     );
@@ -141,8 +142,8 @@ pub fn initialize_default_scenery(
         },
     );
 
-    for i in 0..32 {
-        for j in 0..32 {
+    for i in 0..4 {
+        for j in 0..4 {
             cube.0.position.x = j as f32;
             cube.0.position.z = i as f32;
             cube.0.scale = Vector3::from_value(0.25);

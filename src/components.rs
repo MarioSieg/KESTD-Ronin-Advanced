@@ -44,7 +44,7 @@ impl Default for Camera {
             fov: Deg(75.0),
             near_clip: 0.1,
             far_clip: 100.0,
-            clamp_y: 80.0,
+            clamp_y: 40.0,
             smoothness: 1.5,
             speed: 0.01,
             prev: Vector2::zero(),

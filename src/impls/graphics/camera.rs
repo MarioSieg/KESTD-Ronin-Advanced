@@ -27,11 +27,13 @@ pub fn compute_camera(
 
         cam.angles.x -= dx + cam.smooth_angles.x;
         cam.angles.y -= dy + cam.smooth_angles.y;
-        cam.angles.y = cam.angles.y.clamp(-cam.clamp_y, cam.clamp_y);
+        let clamp_val = Rad(cam.clamp_y).0;
+        cam.angles.y = cam.angles.y.clamp(-clamp_val, clamp_val);
 
-        let x = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.sin();
-        let y = Rad(cam.angles.y).0.sin();
-        let z = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.cos();
+        let x = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.sin(); // x = cos(rad(CY)) * sin(rad(CX))
+        let y = Rad(cam.angles.y).0.sin(); // y = sin(rad(CY))
+        let z = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.cos(); // z = cos(rad(CY)) * cos(rad(CX))
+
         cam.forward = Vector3::new(x, y, z).normalize();
     }
     cam.prev = Vector2::new(cursor_pos.0, cursor_pos.1);
