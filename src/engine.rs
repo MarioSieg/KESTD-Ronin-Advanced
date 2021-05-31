@@ -1,126 +1,26 @@
 use super::config::CoreConfig;
 use super::resources::ResourceManager;
-use super::scenery::{self, Scenery};
-use super::service;
+use super::scenery::Scenery;
+use super::scheduler::{self, ScheduleHandle};
 use super::systems::SystemSupervisor;
-use clokwerk::{Interval, ScheduleHandle, Scheduler};
 use humantime::Duration;
-use log::*;
-use std::fs;
-use std::io::Write;
-use std::path::Path;
+use log::info;
 use std::process;
 use std::time::Instant;
 
 pub struct Engine {
     pub config: CoreConfig,
     pub systems: SystemSupervisor,
-    pub scenery: Scenery,
+    pub scenery: Box<Scenery>,
     pub resource_manager: ResourceManager,
     pub service_scheduler_thread: Option<ScheduleHandle>,
 }
 
 impl Engine {
-    fn log_level_filter() -> log::LevelFilter {
-        #[cfg(debug_assertions)]
-        {
-            log::LevelFilter::Trace
-        }
-        #[cfg(not(debug_assertions))]
-        {
-            log::LevelFilter::Info
-        }
-    }
-
-    const LOGGER_DIR: &'static str = "proto";
-
-    fn create_logger() -> Result<(), log::SetLoggerError> {
-        use colors::*;
-        use fern::*;
-        let mut colors = ColoredLevelConfig::new().info(Color::Green);
-        colors.warn = Color::Magenta;
-        colors.info = Color::BrightBlue;
-
-        let log_dir = Path::new(Self::LOGGER_DIR);
-        if !log_dir.exists() && fs::create_dir(log_dir).is_err() {
-            warn!(
-                "Failed to create log directory: {:?}! Log file creation might fail too!",
-                log_dir
-            );
-        }
-
-        let log_file_path = String::from(log_dir.to_str().unwrap_or_default())
-            + &chrono::Local::now()
-                .format("/engine_session_%Y_%m_%d_%H_%M_%S.log")
-                .to_string();
-        let log_file = fern::log_file(&log_file_path);
-
-        #[allow(unused_mut)]
-        let mut dispatch = Dispatch::new()
-            .format(move |out, message, record| {
-                out.finish(format_args!(
-                    "{}[{}][{}] {}",
-                    chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
-                    record.target(),
-                    colors.color(record.level()),
-                    message
-                ))
-            })
-            .level(Self::log_level_filter())
-            .chain(std::io::stdout());
-
-        if let Ok(file) = log_file {
-            dispatch = dispatch.chain(file);
-        } else {
-            warn!("Failed to create log file: {:?}", log_file_path);
-        }
-
-        #[cfg(not(debug_assertions))]
-        {
-            dispatch = dispatch.level_for("gfx_backend_vulkan", LevelFilter::Off);
-            dispatch = dispatch.level_for("gfx_backend_dx11", LevelFilter::Off);
-            dispatch = dispatch.level_for("gfx_backend_dx12", LevelFilter::Off);
-            dispatch = dispatch.level_for("naga", LevelFilter::Off);
-        }
-
-        dispatch.apply()
-    }
-
-    fn install_panic_hook() {
-        // Only use custom panic handler if we are in release mode:
-        #[cfg(not(debug_assertions))]
-        std::panic::set_hook(Box::new(|panic_info: &core::panic::PanicInfo| {
-            // get info:
-            let (file, line) = if let Some(loc) = panic_info.location() {
-                (loc.file(), loc.line())
-            } else {
-                ("", 0)
-            };
-            let info = panic_info.payload().downcast_ref::<&str>().unwrap_or(&"");
-
-            // print to stdout:
-            println!(
-                "System panic occurred in file '{}' at line {}! Message: {:?}",
-                file, line, info
-            );
-            let _ = std::io::stdout().flush();
-
-            // create message box:
-            let _ = msgbox::create(
-                "Engine System Panic",
-                &format!(
-                    "System panic occurred in file '{}' at line {}! Message: {:?}",
-                    file, line, info
-                ),
-                msgbox::IconType::Error,
-            );
-        }));
-    }
-
     pub fn initialize() -> Box<Self> {
-        Self::install_panic_hook();
+        super::panic_hook::install();
         let clock = Instant::now();
-        let _ = Self::create_logger();
+        let _ = super::logger::create();
 
         println!("{}", LOGO);
         info!("Initializing KESTD Ronin simulation system...");
@@ -136,33 +36,18 @@ impl Engine {
 
         let mut config = CoreConfig::load();
         let systems = SystemSupervisor::initialize(&mut config);
-        let mut scenery = Scenery::default();
         let mut resource_manager = ResourceManager::with_capacity(
             config.application_config.default_resource_cache_capacity,
         );
 
-        let service_scheduler_thread = if !config.application_config.disable_service_routine {
-            let interval = config
-                .application_config
-                .service_routine_minute_interval
-                .clamp(1, 60) as u64;
-            info!(
-                "Starting service routine thread scheduler with interval of {} Minutes",
-                interval
-            );
-            let mut service_scheduler = Scheduler::new();
-            service_scheduler
-                .every(Interval::Minutes(interval as u32))
-                .run(service::service_routine);
-            Some(service_scheduler.watch_thread(std::time::Duration::new(interval, 0)))
-        } else {
-            warn!("Service routine is disabled! This is not recommended and might lead to system instability!");
-            None
-        };
+        let disable_service_routine = config.application_config.disable_service_routine;
+        let service_routine_interval = config.application_config.service_routine_minute_interval;
+        let service_scheduler_thread =
+            scheduler::launch_fixed_routine(disable_service_routine, service_routine_interval);
 
         info!("Initializing scenery...");
         let scenery_clock = Instant::now();
-        scenery::initialize_default_scenery(&systems, &mut scenery, &mut resource_manager);
+        let scenery = Scenery::default_preset(&systems, &mut resource_manager);
         info!(
             "Scenery is initialized! Time: {}",
             Duration::from(scenery_clock.elapsed())
@@ -184,8 +69,11 @@ impl Engine {
     }
 
     pub fn run(&mut self) -> u32 {
+        use std::io::Write;
+
         info!("Preparing systems...");
         self.systems.prepare_all(&mut self.scenery);
+
         info!("Executing simulation...");
         let _ = std::io::stdout().flush();
         let clock = Instant::now();
