@@ -53,19 +53,20 @@ impl Engine {
             Duration::from(scenery_clock.elapsed())
         );
 
-        let this = Self {
+        let value = Box::new(Self {
             config,
             systems,
             scenery,
             resource_manager,
             service_scheduler_thread,
-        };
+        });
 
         info!(
             "System online! Boot time: {}",
             Duration::from(clock.elapsed())
         );
-        Box::new(this)
+
+        value
     }
 
     pub fn run(&mut self) -> u32 {
