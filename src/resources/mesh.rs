@@ -1,9 +1,12 @@
 use super::prelude::*;
 use bytemuck::{Pod, Zeroable};
+use humantime::Duration;
+use log::info;
 use std::io::{BufReader, Cursor};
+use std::time::Instant;
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Vertex {
     position: [f32; 4],
     tex_coords: [f32; 2],
@@ -71,17 +74,35 @@ impl Resource for Mesh {
         let input = BufReader::new(Cursor::new(raw_data));
         let mesh: Obj<TexturedVertex> = load_obj(input).unwrap();
 
-        let vertices: Vec<Vertex> = mesh
+        let clock = Instant::now();
+
+        let mut vertices: Vec<Vertex> = mesh
             .vertices
-            .into_par_iter()
-            .map(|v: TexturedVertex| Vertex {
+            .par_iter()
+            .map(|v: &TexturedVertex| Vertex {
                 position: [v.position[0], v.position[1], v.position[2], 1.0],
                 tex_coords: [v.texture[0], v.texture[1]],
             })
             .collect();
-        let vertices = vertices.into_boxed_slice();
 
-        let indices: Box<[Index]> = mesh.indices.into_boxed_slice();
+        // convert to 32-bit indices:
+        let mut indices: Vec<u32> = mesh.indices.par_iter().map(|x| *x as u32).collect();
+
+        // optimize mesh:
+        meshopt::optimize_vertex_cache_in_place(&indices[..], vertices.len());
+        meshopt::optimize_vertex_fetch_in_place(&mut indices[..], &mut vertices[..]);
+
+        // convert back to 16-bit indices
+        let indices: Vec<Index> = indices.par_iter().map(|x| *x as Index).collect();
+
+        // convert to boxed slices:
+        let vertices = vertices.into_boxed_slice();
+        let indices = indices.into_boxed_slice();
+
+        info!(
+            "Mesh optimization took: {}",
+            Duration::from(clock.elapsed())
+        );
 
         let vertex_buffer = system
             .drivers

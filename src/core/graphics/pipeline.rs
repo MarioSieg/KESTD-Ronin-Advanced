@@ -49,18 +49,17 @@ impl ShaderPipeline {
             shader_compiler::VS_ID
         );
 
-        info!("Vertex shader: {}", vs_bytecode_path);
-
         let fs_bytecode_path = format!(
             "db/shaders/fixed_pipelines/{}/shader.{}.glsl",
             name,
             shader_compiler::FS_ID
         );
 
-        info!("Fragment shader: {}", fs_bytecode_path);
-
         let vs_bytecode_path = PathBuf::from(vs_bytecode_path);
         let fs_bytecode_path = PathBuf::from(fs_bytecode_path);
+
+        info!("Fragment shader: {:?}", fs_bytecode_path);
+        info!("Vertex shader: {:?}", vs_bytecode_path);
 
         let vs_module = drivers.compile_and_create_shader(vs_bytecode_path, ShaderKind::Vertex);
         let fs_module = drivers.compile_and_create_shader(fs_bytecode_path, ShaderKind::Fragment);

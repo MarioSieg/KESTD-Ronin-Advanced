@@ -65,10 +65,16 @@ impl Drivers {
 
     pub fn compile_and_create_shader(&mut self, path: PathBuf, kind: ShaderKind) -> ShaderModule {
         let code = self.compile_shader_raw(path, kind);
+        // bug in wgpu - shader validation fails on vertex shaders with push constants
+        let flags = if kind == ShaderKind::Vertex {
+            ShaderFlags::default()
+        } else {
+            ShaderFlags::VALIDATION
+        };
         let desc = ShaderModuleDescriptor {
             label: None,
             source: util::make_spirv(code.as_binary_u8()),
-            flags: ShaderFlags::VALIDATION,
+            flags,
         };
         self.device.create_shader_module(&desc)
     }
