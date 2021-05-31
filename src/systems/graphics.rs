@@ -1,10 +1,10 @@
 use super::prelude::*;
 use crate::components::{Camera, MeshRenderer, Transform};
-use crate::ecs::resources::{KeyInputStateCollection, MouseInputStateCollection};
-use crate::ecs::IntoQuery;
 use crate::impls::graphics::prelude::*;
 use crate::impls::platform::prelude::WindowHandle;
-use crate::math::{Matrix4, SquareMatrix};
+use crate::scenery_resources::{KeyInputStateCollection, MouseInputStateCollection};
+use cgmath::{Matrix4, SquareMatrix};
+use legion::IntoQuery;
 use log::warn;
 use wgpu::ShaderStage;
 

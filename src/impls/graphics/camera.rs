@@ -1,11 +1,8 @@
 use crate::components::{Camera, Transform};
-use crate::ecs::resources::{
+use crate::scenery_resources::{
     CursorPos, Key, KeyInputStateCollection, MouseButton, MouseInputStateCollection,
 };
-use crate::math::{
-    perspective, Array, ElementWise, EuclideanSpace, InnerSpace, Matrix4, Point3, Rad, Vector2,
-    Vector3, VectorSpace, Zero,
-};
+use cgmath::*;
 
 pub fn compute_camera(
     aspect_ratio: f32,
@@ -27,7 +24,8 @@ pub fn compute_camera(
 
         cam.angles.x -= dx + cam.smooth_angles.x;
         cam.angles.y -= dy + cam.smooth_angles.y;
-        let clamp_val = Rad(cam.clamp_y).0;
+
+        let clamp_val = Rad::from(cam.clamp_y).0;
         cam.angles.y = cam.angles.y.clamp(-clamp_val, clamp_val);
 
         let x = Rad(cam.angles.y).0.cos() * Rad(cam.angles.x).0.sin(); // x = cos(rad(CY)) * sin(rad(CX))

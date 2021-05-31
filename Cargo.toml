@@ -4,10 +4,6 @@ version = "0.1.0"
 authors = ["msi <support@kerbogames.com>"]
 edition = "2018"
 
-[lib]
-name = "ronin"
-path = "src/lib.rs"
-
 [[bin]]
 name = "kestd"
 path = "src/bin.rs"

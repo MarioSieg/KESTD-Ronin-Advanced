@@ -5,7 +5,7 @@ pub mod graphics;
 pub mod memory;
 pub mod platform;
 
-use crate::ecs::Scenery;
+use crate::scenery::Scenery;
 use graphics::GraphicsSystem;
 use memory::MemorySystem;
 use platform::PlatformSystem;
@@ -58,5 +58,5 @@ impl SystemSupervisor {
 pub mod prelude {
     pub use super::SubSystem;
     pub use crate::config::*;
-    pub use crate::ecs::Scenery;
+    pub use crate::scenery::Scenery;
 }

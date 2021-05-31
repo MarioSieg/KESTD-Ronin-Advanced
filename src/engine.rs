@@ -1,6 +1,6 @@
 use super::config::CoreConfig;
-use super::ecs::{self, Scenery};
 use super::resources::ResourceManager;
+use super::scenery::{self, Scenery};
 use super::service;
 use super::systems::SystemSupervisor;
 use clokwerk::{Interval, ScheduleHandle, Scheduler};
@@ -162,7 +162,7 @@ impl Engine {
 
         info!("Initializing scenery...");
         let scenery_clock = Instant::now();
-        ecs::initialize_default_scenery(&systems, &mut scenery, &mut resource_manager);
+        scenery::initialize_default_scenery(&systems, &mut scenery, &mut resource_manager);
         info!(
             "Scenery is initialized! Time: {}",
             Duration::from(scenery_clock.elapsed())

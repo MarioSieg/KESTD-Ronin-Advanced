@@ -1,5 +1,5 @@
-use super::math::*;
 use super::resources::{material::Material, mesh::Mesh};
+use cgmath::*;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -29,7 +29,7 @@ pub struct Camera {
     pub fov: Deg<f32>,
     pub near_clip: f32,
     pub far_clip: f32,
-    pub clamp_y: f32,
+    pub clamp_y: Deg<f32>,
     pub smoothness: f32,
     pub speed: f32,
     pub prev: Vector2<f32>,
@@ -44,7 +44,7 @@ impl Default for Camera {
             fov: Deg(75.0),
             near_clip: 0.1,
             far_clip: 100.0,
-            clamp_y: 40.0,
+            clamp_y: Deg(40.0),
             smoothness: 1.5,
             speed: 0.01,
             prev: Vector2::zero(),

@@ -1,7 +1,7 @@
 use crate::impls::graphics::prelude::*;
-use crate::math::Matrix4;
 use crate::resources::mesh::Vertex;
 use bytemuck::{Pod, Zeroable};
+use cgmath::Matrix4;
 use wgpu::*;
 
 pub struct LambertPipeline {

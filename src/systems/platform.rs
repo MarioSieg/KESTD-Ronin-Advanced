@@ -1,6 +1,6 @@
 use super::prelude::*;
-use crate::ecs::resources::{CursorPos, KeyInputStateCollection, MouseInputStateCollection};
 use crate::impls::platform::prelude::*;
+use crate::scenery_resources::{CursorPos, KeyInputStateCollection, MouseInputStateCollection};
 
 pub struct PlatformSystem {
     pub win_data: WindowData,
@@ -58,7 +58,7 @@ impl SubSystem for PlatformSystem {
                 CursorPos(x, y) => {
                     let mut cursor_pos = scenery
                         .resources
-                        .get_mut::<crate::ecs::resources::CursorPos>()
+                        .get_mut::<crate::scenery_resources::CursorPos>()
                         .unwrap();
                     cursor_pos.0 = x as f32;
                     cursor_pos.1 = y as f32;
