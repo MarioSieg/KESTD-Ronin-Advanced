@@ -1,7 +1,7 @@
 use super::prelude::*;
 use crate::components::{Camera, MeshRenderer, Transform};
-use crate::impls::graphics::prelude::*;
-use crate::impls::platform::prelude::WindowHandle;
+use crate::core::graphics::prelude::*;
+use crate::core::platform::prelude::WindowHandle;
 use crate::scenery_resources::{KeyInputStateCollection, MouseInputStateCollection};
 use cgmath::{Matrix4, SquareMatrix};
 use legion::IntoQuery;

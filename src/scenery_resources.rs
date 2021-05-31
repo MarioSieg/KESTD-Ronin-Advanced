@@ -1,5 +1,5 @@
-pub use crate::impls::platform::prelude::{Action, Key, Modifiers, MouseButton};
-use crate::impls::platform::prelude::{KEY_COUNT, MOUSE_BUTTON_COUNT};
+pub use crate::core::platform::prelude::{Action, Key, Modifiers, MouseButton};
+use crate::core::platform::prelude::{KEY_COUNT, MOUSE_BUTTON_COUNT};
 
 #[derive(Default, Copy, Clone, Debug)]
 pub struct CursorPos(pub f32, pub f32);

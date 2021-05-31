@@ -5,7 +5,7 @@ pub mod pipelines;
 pub mod prelude;
 
 use crate::config::{CoreConfig, GraphicsApi, GraphicsConfig, MsaaMode};
-use crate::impls::graphics::prelude::Pipeline;
+use crate::core::graphics::prelude::Pipeline;
 use log::info;
 use pass::Pass;
 use pipeline::{ShaderPipeline, ShaderPipelineDescriptor};

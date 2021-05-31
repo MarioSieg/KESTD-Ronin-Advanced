@@ -1,4 +1,4 @@
-use crate::impls::graphics::prelude::*;
+use crate::core::graphics::prelude::*;
 use crate::resources::mesh::Vertex;
 use bytemuck::{Pod, Zeroable};
 use cgmath::Matrix4;

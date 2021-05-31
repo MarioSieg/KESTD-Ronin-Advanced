@@ -1,5 +1,5 @@
 use super::prelude::*;
-use crate::impls::platform::prelude::*;
+use crate::core::platform::prelude::*;
 use crate::scenery_resources::{CursorPos, KeyInputStateCollection, MouseInputStateCollection};
 
 pub struct PlatformSystem {
