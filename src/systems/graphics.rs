@@ -1,6 +1,9 @@
 use super::prelude::*;
 use crate::components::{Camera, MeshRenderer, Transform};
-use crate::core::graphics::{camera, drivers::Drivers, pipeline::Pipeline, pipelines::lambert};
+use crate::core::graphics::{
+    camera, drivers::Drivers, gui::Renderer as ImGuiRenderer,
+    gui::RendererConfig as ImGuiRendererConfig, pipeline::Pipeline, pipelines::lambert,
+};
 use crate::core::platform::prelude::WindowHandle;
 use crate::scenery_resources::{KeyInputStateCollection, MouseInputStateCollection};
 use cgmath::{Matrix4, SquareMatrix};
@@ -11,6 +14,8 @@ use wgpu::ShaderStage;
 pub struct GraphicsSystem {
     pub drivers: Drivers,
     pub lambert_pipeline: lambert::LambertPipeline,
+    pub imgui: imgui::Context,
+    pub imgui_renderer: ImGuiRenderer,
 }
 
 impl SubSystem for GraphicsSystem {
@@ -20,9 +25,42 @@ impl SubSystem for GraphicsSystem {
         let mut drivers = Drivers::initialize(window, cfg);
         let lambert_pipeline = lambert::LambertPipeline::create(&mut drivers, cfg);
 
+        let mut imgui = imgui::Context::create();
+
+        imgui.set_ini_filename(None);
+
+        imgui
+            .fonts()
+            .add_font(&[imgui::FontSource::DefaultFontData {
+                config: Some(imgui::FontConfig {
+                    oversample_h: 1,
+                    pixel_snap_h: true,
+                    size_pixels: 16.0,
+                    ..Default::default()
+                }),
+            }]);
+
+        let io = imgui.io_mut();
+        io.display_size[0] = cfg.display_config.resolution.0 as f32;
+        io.display_size[1] = cfg.display_config.resolution.1 as f32;
+
+        let imgui_renderer_config = ImGuiRendererConfig {
+            texture_format: drivers.swap_chain_format,
+            sample_count: drivers.msaa_samples as u32,
+            ..Default::default()
+        };
+        let imgui_renderer = ImGuiRenderer::new(
+            &mut imgui,
+            &drivers.device,
+            &drivers.queue,
+            imgui_renderer_config,
+        );
+
         Self {
             drivers,
             lambert_pipeline,
+            imgui,
+            imgui_renderer,
         }
     }
 
@@ -53,24 +91,58 @@ impl SubSystem for GraphicsSystem {
                 Matrix4::identity()
             };
 
-            let mut pass = frame.create_pass(true);
-            pass.set_pipeline(&self.lambert_pipeline);
+            // draw 3d scene:
+            {
+                let mut pass = frame.create_pass(true);
+                pass.set_pipeline(&self.lambert_pipeline);
 
-            let mut render_query = <(&Transform, &MeshRenderer)>::query();
-            render_query.for_each(&scenery.world, |(transform, renderer)| {
-                let world_matrix = transform.calculate_matrix();
-                let push_constant_data = lambert::PushConstantData {
-                    world_matrix,
-                    view_proj_matrix,
-                };
-                pass.set_push_constans(
-                    ShaderStage::VERTEX,
-                    0,
-                    bytemuck::bytes_of(&push_constant_data),
-                );
-                pass.set_bind_group(0, renderer.material.bind_group());
-                pass.draw_indexed(&renderer.mesh);
-            });
+                let mut render_query = <(&Transform, &MeshRenderer)>::query();
+                render_query.for_each(&scenery.world, |(transform, renderer)| {
+                    let world_matrix = transform.calculate_matrix();
+                    let push_constant_data = lambert::PushConstantData {
+                        world_matrix,
+                        view_proj_matrix,
+                    };
+                    pass.set_push_constans(
+                        ShaderStage::VERTEX,
+                        0,
+                        bytemuck::bytes_of(&push_constant_data),
+                    );
+                    pass.set_bind_group(0, renderer.material.bind_group());
+                    pass.draw_indexed(&renderer.mesh);
+                });
+            }
+
+            // draw gui:
+            {
+                let mut pass = frame
+                    .encoder
+                    .begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: None,
+                        color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                            attachment: &frame.view.view,
+                            resolve_target: None,
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: true,
+                            },
+                        }],
+                        depth_stencil_attachment: None,
+                    });
+                let ui = self.imgui.frame();
+                {
+                    let mut opened = true;
+                    ui.show_demo_window(&mut opened);
+                }
+                self.imgui_renderer
+                    .render(
+                        ui.render(),
+                        &self.drivers.queue,
+                        &self.drivers.device,
+                        &mut pass,
+                    )
+                    .expect("GUI rendering failed");
+            }
         }
 
         frame.end();

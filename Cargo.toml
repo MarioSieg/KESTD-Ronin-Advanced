@@ -45,3 +45,5 @@ legion = "0.4.0"
 clokwerk = "0.3.4"
 shaderc = {version = "0.7.2", features = ["build-from-source"]}
 meshopt = "0.1.9"
+imgui = "0.7.0"
+

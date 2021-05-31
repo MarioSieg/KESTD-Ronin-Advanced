@@ -2,6 +2,7 @@ pub mod boot;
 pub mod camera;
 pub mod drivers;
 pub mod frame;
+pub mod gui;
 pub mod mipgen;
 pub mod pass;
 pub mod pipeline;
