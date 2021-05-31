@@ -1,3 +1,5 @@
+use std::io::Write;
+
 pub fn install() {
     // Only use custom panic handler if we are in release mode:
     #[cfg(not(debug_assertions))]

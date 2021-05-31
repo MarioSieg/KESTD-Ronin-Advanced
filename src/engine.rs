@@ -92,7 +92,7 @@ impl Engine {
     }
 
     pub fn shutdown(&mut self) {
-        println!("Shutting down simulation system...");
+        info!("Shutting down simulation system...");
     }
 
     fn tick(&mut self) -> bool {

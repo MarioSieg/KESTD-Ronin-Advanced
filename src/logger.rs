@@ -1,15 +1,16 @@
-use log::warn;
+use log::{warn, LevelFilter};
 use std::fs;
 use std::path::Path;
 
-pub fn level_filter() -> log::LevelFilter {
+#[inline]
+pub fn level_filter() -> LevelFilter {
     #[cfg(debug_assertions)]
     {
-        log::LevelFilter::Trace
+        LevelFilter::Trace
     }
     #[cfg(not(debug_assertions))]
     {
-        log::LevelFilter::Info
+        LevelFilter::Info
     }
 }
 
