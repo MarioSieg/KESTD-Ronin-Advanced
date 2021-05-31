@@ -1,6 +1,6 @@
 use super::prelude::*;
 use crate::components::{Camera, MeshRenderer, Transform};
-use crate::core::graphics::prelude::*;
+use crate::core::graphics::{camera, drivers::Drivers, pipeline::Pipeline, pipelines::lambert};
 use crate::core::platform::prelude::WindowHandle;
 use crate::scenery_resources::{KeyInputStateCollection, MouseInputStateCollection};
 use cgmath::{Matrix4, SquareMatrix};
@@ -11,15 +11,6 @@ use wgpu::ShaderStage;
 pub struct GraphicsSystem {
     pub drivers: Drivers,
     pub lambert_pipeline: lambert::LambertPipeline,
-}
-
-impl GraphicsSystem {
-    #[inline]
-    pub fn aspect_ratio(&self) -> f32 {
-        let width = self.drivers.swap_chain_desc.width as f32;
-        let height = self.drivers.swap_chain_desc.height as f32;
-        width / height
-    }
 }
 
 impl SubSystem for GraphicsSystem {
@@ -50,7 +41,7 @@ impl SubSystem for GraphicsSystem {
                     .get::<MouseInputStateCollection>()
                     .unwrap();
                 camera::compute_camera(
-                    self.aspect_ratio(),
+                    self.drivers.aspect_ratio(),
                     camera,
                     cursor_pos,
                     &*key_queue,

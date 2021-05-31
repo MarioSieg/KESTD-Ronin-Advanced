@@ -1,10 +1,9 @@
-use super::Drivers;
+use super::drivers::Drivers;
+use super::shader_compiler;
 use crate::config::CoreConfig;
 use bytemuck::{Pod, Zeroable};
-use log::info;
-use shaderc::{CompileOptions, ShaderKind};
 use smallvec::{smallvec, SmallVec};
-use std::fs;
+use std::path::PathBuf;
 use wgpu::*;
 
 pub trait Pipeline {
@@ -41,37 +40,36 @@ impl ShaderPipeline {
     ) -> Self {
         let name = String::from(T::NAME).to_lowercase();
 
-        let vs_bytecode_path = format!("db/shaders/fixed_pipelines/{}/shader.vert.glsl", name);
-        let fs_bytecode_path = format!("db/shaders/fixed_pipelines/{}/shader.frag.glsl", name);
+        let vs_bytecode_path = format!(
+            "db/shaders/fixed_pipelines/{}/shader.{}.glsl",
+            name,
+            shader_compiler::VS_ID
+        );
+        let fs_bytecode_path = format!(
+            "db/shaders/fixed_pipelines/{}/shader.{}.glsl",
+            name,
+            shader_compiler::FS_ID
+        );
+        let vs_bytecode_path = PathBuf::from(vs_bytecode_path);
+        let fs_bytecode_path = PathBuf::from(fs_bytecode_path);
 
-        let mut compile_bytecode = |path: String, shader_type: ShaderKind| {
-            let source = fs::read_to_string(&path).unwrap_or_else(|_| {
-                panic!("Failed to load file: {}", path);
-            });
-            let sh_opt = &CompileOptions::new().expect("Failed to create compile options!");
-            info!("Compiling shader: {}", path);
-            drivers
-                .shader_compiler
-                .compile_into_spirv(
-                    source.as_str(),
-                    shader_type,
-                    path.as_str(),
-                    "main",
-                    Some(sh_opt),
-                )
-                .unwrap_or_else(|_| {
-                    panic!("Failed to compile shader: {}", path);
-                })
-        };
-
-        let vs_bytecode = compile_bytecode(vs_bytecode_path, shaderc::ShaderKind::Vertex);
-        let fs_bytecode = compile_bytecode(fs_bytecode_path, shaderc::ShaderKind::Fragment);
+        let vs_bytecode = shader_compiler::compile_to_bytecode(
+            drivers,
+            vs_bytecode_path,
+            shaderc::ShaderKind::Vertex,
+        );
+        let fs_bytecode = shader_compiler::compile_to_bytecode(
+            drivers,
+            fs_bytecode_path,
+            shaderc::ShaderKind::Fragment,
+        );
 
         let vs_module_desc = ShaderModuleDescriptor {
             label: None,
             source: util::make_spirv(vs_bytecode.as_binary_u8()),
             flags: ShaderFlags::default(),
         };
+
         let fs_module_desc = ShaderModuleDescriptor {
             label: None,
             source: util::make_spirv(fs_bytecode.as_binary_u8()),
@@ -105,12 +103,12 @@ impl ShaderPipeline {
                 layout: Some(&pipeline_layout),
                 vertex: VertexState {
                     module: &vs_module,
-                    entry_point: Self::SHADER_ENTRY,
+                    entry_point: shader_compiler::SHADER_ENTRY,
                     buffers: T::VERTEX_BUFFER_LAYOUTS,
                 },
                 fragment: Some(FragmentState {
                     module: &fs_module,
-                    entry_point: Self::SHADER_ENTRY,
+                    entry_point: shader_compiler::SHADER_ENTRY,
                     targets: &fs_targets[..],
                 }),
                 primitive: T::PRIMITIVE_STATE,
@@ -127,6 +125,4 @@ impl ShaderPipeline {
             per_material_bind_group_layout: material_bind_group_layout,
         }
     }
-
-    pub const SHADER_ENTRY: &'static str = "main";
 }

@@ -1,8 +1,4 @@
-use crate::core::graphics::prelude::*;
-use crate::resources::mesh::Vertex;
-use bytemuck::{Pod, Zeroable};
-use cgmath::Matrix4;
-use wgpu::*;
+use super::prelude::*;
 
 pub struct LambertPipeline {
     pub shader_pipeline: ShaderPipeline,
@@ -72,7 +68,7 @@ impl Pipeline for LambertPipeline {
     ];
 
     const DEPTH_STENCIL_STATE: Option<DepthStencilState> = Some(DepthStencilState {
-        format: Drivers::DEPTH_FORMAT,
+        format: DEPTH_FORMAT,
         depth_write_enabled: true,
         depth_compare: CompareFunction::Less,
         stencil: StencilState {
