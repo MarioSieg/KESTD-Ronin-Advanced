@@ -16,8 +16,10 @@ mod systems;
 use crate::engine::Engine;
 
 fn main() {
-    println!("{}", std::mem::size_of::<scenery::Scenery>());
-    let mut engine = Engine::initialize();
-    engine.run();
-    engine.shutdown();
+    {
+        let mut engine = Engine::initialize();
+        engine.run();
+        engine.shutdown();
+    }
+    log::info!("System offline!");
 }
