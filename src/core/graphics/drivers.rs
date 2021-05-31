@@ -2,9 +2,11 @@ use super::boot;
 use super::frame::Frame;
 use super::mipgen;
 use super::pipeline::{Pipeline, ShaderPipeline, ShaderPipelineDescriptor};
+use super::shader_compiler;
 use crate::config::{CoreConfig, GraphicsApi, MsaaMode};
 use log::info;
-use shaderc::Compiler as ShaderCompiler;
+use shaderc::{CompilationArtifact, Compiler as ShaderCompiler, ShaderKind};
+use std::path::PathBuf;
 use wgpu::*;
 
 pub struct Drivers {
@@ -55,6 +57,20 @@ impl Drivers {
             depth_stencil: &self.depth_texture,
             samples: self.msaa_samples,
         }
+    }
+
+    pub fn compile_shader_raw(&mut self, path: PathBuf, kind: ShaderKind) -> CompilationArtifact {
+        shader_compiler::compile_to_bytecode(self, path, kind)
+    }
+
+    pub fn compile_and_create_shader(&mut self, path: PathBuf, kind: ShaderKind) -> ShaderModule {
+        let code = self.compile_shader_raw(path, kind);
+        let desc = ShaderModuleDescriptor {
+            label: None,
+            source: util::make_spirv(code.as_binary_u8()),
+            flags: ShaderFlags::VALIDATION,
+        };
+        self.device.create_shader_module(&desc)
     }
 
     pub fn initialize(window: &glfw::Window, config: &CoreConfig) -> Self {

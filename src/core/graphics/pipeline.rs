@@ -2,6 +2,8 @@ use super::drivers::Drivers;
 use super::shader_compiler;
 use crate::config::CoreConfig;
 use bytemuck::{Pod, Zeroable};
+use log::info;
+use shaderc::ShaderKind;
 use smallvec::{smallvec, SmallVec};
 use std::path::PathBuf;
 use wgpu::*;
@@ -39,45 +41,30 @@ impl ShaderPipeline {
         desc: ShaderPipelineDescriptor,
     ) -> Self {
         let name = String::from(T::NAME).to_lowercase();
+        info!("Creating render pipeline \"{}\"...", name);
 
         let vs_bytecode_path = format!(
             "db/shaders/fixed_pipelines/{}/shader.{}.glsl",
             name,
             shader_compiler::VS_ID
         );
+
+        info!("Vertex shader: {}", vs_bytecode_path);
+
         let fs_bytecode_path = format!(
             "db/shaders/fixed_pipelines/{}/shader.{}.glsl",
             name,
             shader_compiler::FS_ID
         );
+
+        info!("Fragment shader: {}", fs_bytecode_path);
+
         let vs_bytecode_path = PathBuf::from(vs_bytecode_path);
         let fs_bytecode_path = PathBuf::from(fs_bytecode_path);
 
-        let vs_bytecode = shader_compiler::compile_to_bytecode(
-            drivers,
-            vs_bytecode_path,
-            shaderc::ShaderKind::Vertex,
-        );
-        let fs_bytecode = shader_compiler::compile_to_bytecode(
-            drivers,
-            fs_bytecode_path,
-            shaderc::ShaderKind::Fragment,
-        );
+        let vs_module = drivers.compile_and_create_shader(vs_bytecode_path, ShaderKind::Vertex);
+        let fs_module = drivers.compile_and_create_shader(fs_bytecode_path, ShaderKind::Fragment);
 
-        let vs_module_desc = ShaderModuleDescriptor {
-            label: None,
-            source: util::make_spirv(vs_bytecode.as_binary_u8()),
-            flags: ShaderFlags::default(),
-        };
-
-        let fs_module_desc = ShaderModuleDescriptor {
-            label: None,
-            source: util::make_spirv(fs_bytecode.as_binary_u8()),
-            flags: ShaderFlags::VALIDATION,
-        };
-
-        let vs_module = drivers.device.create_shader_module(&vs_module_desc);
-        let fs_module = drivers.device.create_shader_module(&fs_module_desc);
         let fs_targets = smallvec![drivers.swap_chain_format.into()];
 
         let material_bind_group_layout =
